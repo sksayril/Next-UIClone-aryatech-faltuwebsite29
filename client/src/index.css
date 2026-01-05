@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Oswald', sans-serif;
+
+  /* Dark Theme Palette (xHamster inspired) */
+  --background: 0 0% 13%;      /* #222222 - Main background */
+  --foreground: 0 0% 100%;    /* #ffffff - Primary text */
+  
+  --primary: 358 66% 50%;     /* #d52d2d - Brand Red */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 18%;      /* #2e2e2e - Secondary bg elements */
+  --secondary-foreground: 0 0% 80%;
+  
+  --muted: 0 0% 12%;          /* #1e1e1e - Sidebar/Nav background */
+  --muted-foreground: 0 0% 60%; /* #999999 - Secondary text */
+
+  --accent: 358 66% 50%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 20%;         /* Dark border */
+  --input: 0 0% 20%;
+  --ring: 358 66% 50%;
+  
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 100%;
+  
+  --sidebar-background: 0 0% 9%; /* Slightly lighter than main bg */
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    min-width: 1200px;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    min-width: 1200px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #111; 
+}
+::-webkit-scrollbar-thumb {
+  background: #333; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444; 
+}
