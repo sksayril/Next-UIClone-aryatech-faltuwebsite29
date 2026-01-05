@@ -41,24 +41,24 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#222222] text-white font-sans overflow-x-auto" style={{ minWidth: '1200px' }}>
+    <div className="min-h-screen bg-[#222222] text-white font-sans">
       <Header />
 
-      <div className="flex min-h-[calc(100vh-104px)] bg-[#222222] w-full">
-        {/* Left Sidebar - Filter Sidebar */}
-        <div className="w-64 flex-shrink-0 sticky top-[104px] h-[calc(100vh-104px)] overflow-y-auto border-r border-[#333] bg-[#1e1e1e]">
+      <div className="flex min-h-[calc(100vh-104px)] md:min-h-[calc(100vh-114px)] bg-[#222222] w-full">
+        {/* Left Sidebar - Filter Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block w-64 flex-shrink-0 sticky top-[104px] h-[calc(100vh-104px)] overflow-y-auto border-r border-[#333] bg-[#1e1e1e]">
           <FilterSidebar />
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 px-8 py-8 max-w-full bg-[#222222]">
+        <main className="flex-1 min-w-0 px-3 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 max-w-full bg-[#222222]">
           
           {/* Main Content Header */}
-          <div className="flex items-center justify-between mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-4xl text-white font-bold">Porn Video Search</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-8 gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl text-white font-bold">Porn Video Search</h1>
               {pagination && (
-                <span className="text-gray-400 text-base whitespace-nowrap">
+                <span className="text-gray-400 text-sm md:text-base whitespace-nowrap">
                   {pagination.total >= 1000000 
                     ? `${(pagination.total / 1000000).toFixed(1)}M Results`
                     : pagination.total >= 1000
@@ -70,10 +70,10 @@ export default function Home() {
           </div>
 
           {/* Video Type Filters */}
-          <div className="flex items-center gap-4 mb-8 pb-3 border-b border-[#333]">
+          <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pb-3 border-b border-[#333] overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveVideoType('free')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeVideoType === 'free' 
                   ? 'text-primary border-primary' 
                   : 'text-gray-400 border-transparent hover:text-white'
@@ -83,7 +83,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveVideoType('short')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeVideoType === 'short' 
                   ? 'text-primary border-primary' 
                   : 'text-gray-400 border-transparent hover:text-white'
@@ -93,18 +93,18 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveVideoType('premium')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-1 ${
+              className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 flex items-center gap-1 whitespace-nowrap ${
                 activeVideoType === 'premium' 
                   ? 'text-primary border-primary' 
                   : 'text-gray-400 border-transparent hover:text-white'
               }`}
             >
-              <Crown className="h-4 w-4 text-yellow-500" />
+              <Crown className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
               Premium Videos
             </button>
             <button
               onClick={() => setActiveVideoType('photos')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeVideoType === 'photos' 
                   ? 'text-primary border-primary' 
                   : 'text-gray-400 border-transparent hover:text-white'
@@ -114,12 +114,12 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Popular Search Tags */}
-          <div className="flex flex-wrap gap-2.5 mb-6">
+          {/* Popular Search Tags - Horizontal scroll on mobile */}
+          <div className="flex gap-2 md:gap-2.5 mb-4 md:mb-6 overflow-x-auto scrollbar-hide pb-2">
             {popularTags.map((tag) => (
               <button
                 key={tag}
-                className="px-3 py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-300 hover:text-white text-sm rounded transition-colors"
+                className="px-3 py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-gray-300 hover:text-white text-xs md:text-sm rounded transition-colors whitespace-nowrap flex-shrink-0"
               >
                 {tag}
               </button>
@@ -134,7 +134,7 @@ export default function Home() {
 
           {/* Videos Grid */}
           {isLoading ? (
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="space-y-2">
                   <div className="aspect-video bg-[#1a1a1a] rounded-lg animate-pulse" />
@@ -162,7 +162,7 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-4 gap-6 mb-12">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-8 md:mb-12">
                     {videos.map((video: VideoResponse) => (
                       <VideoCard key={video.id} video={video} />
                     ))}
@@ -207,18 +207,18 @@ export default function Home() {
                     }
                     
                     return (
-                      <div className="flex items-center justify-center gap-1.5 mb-10">
+                      <div className="flex items-center justify-center gap-1 md:gap-1.5 mb-6 md:mb-10 flex-wrap">
                         {pagesToShow.map((page, index) => {
                           if (page === -1) {
                             return (
-                              <span key={`ellipsis-${index}`} className="px-2 text-gray-400">...</span>
+                              <span key={`ellipsis-${index}`} className="px-1 md:px-2 text-gray-400 text-sm">...</span>
                             );
                           }
                           return (
                             <button
                               key={page}
                               onClick={() => setCurrentPage(page)}
-                              className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                              className={`px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-medium rounded transition-colors ${
                                 currentPage === page
                                   ? 'bg-white text-[#222]'
                                   : 'bg-[#2a2a2a] text-gray-400 hover:text-white hover:bg-[#333]'
@@ -233,9 +233,9 @@ export default function Home() {
                         {currentPage < totalPages && (
                           <Button
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className="bg-primary hover:bg-primary/90 text-white border-0 ml-2 px-4"
+                            className="bg-primary hover:bg-primary/90 text-white border-0 ml-1 md:ml-2 px-3 md:px-4 text-xs md:text-sm h-8 md:h-9"
                           >
-                            Next <ChevronRight className="h-4 w-4 ml-1" />
+                            Next <ChevronRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />
                           </Button>
                         )}
                       </div>

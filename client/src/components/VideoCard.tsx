@@ -269,20 +269,20 @@ export function VideoCard({ video }: VideoCardProps) {
       </a>
 
       {/* Meta Info */}
-      <div className="flex flex-col gap-1.5 mt-1">
+      <div className="flex flex-col gap-1 md:gap-1.5 mt-1">
         <a 
           href={`/video/${videoSlug}`} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-sm font-medium text-white group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[2.5rem]"
+          className="text-xs sm:text-sm font-medium text-white group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]"
         >
           {video.title}
         </a>
         
-        <div className="flex items-center text-xs text-gray-400 gap-1.5">
-          <span className="hover:text-gray-300 cursor-pointer">{video.author}</span>
+        <div className="flex items-center text-[10px] sm:text-xs text-gray-400 gap-1 sm:gap-1.5">
+          <span className="hover:text-gray-300 cursor-pointer truncate">{video.author}</span>
           <span>|</span>
-          <span>{formatViews(video.views)} views</span>
+          <span className="whitespace-nowrap">{formatViews(video.views)} views</span>
         </div>
       </div>
     </div>
