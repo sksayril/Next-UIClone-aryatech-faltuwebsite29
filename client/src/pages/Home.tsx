@@ -150,16 +150,20 @@ export default function Home() {
                 Retry
               </Button>
             </div>
+          ) : !Array.isArray(videos) ? (
+            <div className="text-center py-20 text-gray-500">
+              Invalid data format received.
+            </div>
           ) : (
             <>
-              {videos?.length === 0 ? (
+              {videos.length === 0 ? (
                 <div className="text-center py-20 text-gray-500">
                   No videos found.
                 </div>
               ) : (
                 <>
                   <div className="grid grid-cols-4 gap-6 mb-12">
-                    {videos?.map((video: VideoResponse) => (
+                    {videos.map((video: VideoResponse) => (
                       <VideoCard key={video.id} video={video} />
                     ))}
                   </div>

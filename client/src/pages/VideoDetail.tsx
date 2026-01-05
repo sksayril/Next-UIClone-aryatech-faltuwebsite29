@@ -22,12 +22,17 @@ export default function VideoDetail() {
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
-  const { data: relatedVideos } = useVideos({ 
+  const { data: relatedVideosResponse } = useVideos({ 
     sort: 'popular',
     page: 1,
     limit: 30,
     country: 'IN' // Indian content
   });
+  
+  // Extract videos array from response (handle both old array format and new object format)
+  const relatedVideos = Array.isArray(relatedVideosResponse) 
+    ? relatedVideosResponse 
+    : (relatedVideosResponse?.videos || []);
 
   // Get video qualities from video object (safe access)
   const videoQualities = video ? ((video as any)?.videoQualities || {}) : {};
@@ -401,9 +406,15 @@ export default function VideoDetail() {
 
           {/* Related Videos Grid */}
           <div className="grid grid-cols-6 gap-4 mb-8">
-            {relatedVideos?.slice(0, 12).map((relatedVideo: VideoResponse) => (
-              <VideoCard key={relatedVideo.id} video={relatedVideo} />
-            ))}
+            {Array.isArray(relatedVideos) && relatedVideos.length > 0 ? (
+              relatedVideos.slice(0, 12).map((relatedVideo: VideoResponse) => (
+                <VideoCard key={relatedVideo.id} video={relatedVideo} />
+              ))
+            ) : (
+              <div className="col-span-6 text-center text-gray-500 py-8">
+                No related videos found.
+              </div>
+            )}
           </div>
 
           <div className="flex justify-center mb-8">

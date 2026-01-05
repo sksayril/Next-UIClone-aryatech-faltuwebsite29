@@ -161,8 +161,15 @@ export async function registerRoutes(
       });
     } catch (error) {
       console.error('Error fetching from external API:', error);
+      // Return consistent format even on error
       return res.status(500).json({ 
-        message: 'Failed to fetch videos from external API',
+        videos: [],
+        pagination: {
+          page: page,
+          limit: limit,
+          pages: 1,
+          total: 0
+        },
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
