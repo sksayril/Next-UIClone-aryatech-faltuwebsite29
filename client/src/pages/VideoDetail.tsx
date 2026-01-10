@@ -18,12 +18,16 @@ export default function VideoDetail() {
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [videosToShow, setVideosToShow] = useState(12); // Number of videos to display initially
+  const [relatedVideosPage, setRelatedVideosPage] = useState(1);
+  const [allRelatedVideos, setAllRelatedVideos] = useState<VideoResponse[]>([]);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
-  const { data: relatedVideosResponse } = useVideos({ 
+  const { data: relatedVideosResponse, isLoading: isLoadingMoreVideos } = useVideos({ 
     sort: 'popular',
-    page: 1,
+    page: relatedVideosPage,
     limit: 30,
     country: 'IN' // Indian content
   });
@@ -32,6 +36,30 @@ export default function VideoDetail() {
   const relatedVideos = Array.isArray(relatedVideosResponse) 
     ? relatedVideosResponse 
     : (relatedVideosResponse?.videos || []);
+  
+  // Accumulate videos when new page loads
+  useEffect(() => {
+    if (relatedVideos && relatedVideos.length > 0) {
+      if (relatedVideosPage === 1) {
+        // First page - replace all videos
+        setAllRelatedVideos(relatedVideos);
+      } else {
+        // Subsequent pages - append new videos (avoid duplicates)
+        setAllRelatedVideos(prev => {
+          const existingIds = new Set(prev.map((v: VideoResponse) => v.id));
+          const newVideos = relatedVideos.filter((v: VideoResponse) => !existingIds.has(v.id));
+          return [...prev, ...newVideos];
+        });
+      }
+    }
+  }, [relatedVideos, relatedVideosPage]);
+  
+  // Reset when tab changes
+  useEffect(() => {
+    setVideosToShow(12);
+    setRelatedVideosPage(1);
+    setAllRelatedVideos([]);
+  }, [activeTab]);
 
   // Get video qualities from video object (safe access)
   const videoQualities = video ? ((video as any)?.videoQualities || {}) : {};
@@ -47,14 +75,23 @@ export default function VideoDetail() {
   // Get current video URL based on selected quality
   const currentVideoUrl = videoQualities[selectedQuality] || videoQualities[defaultQuality] || previewVideo || '';
 
+  // Reset error state when video URL changes
+  useEffect(() => {
+    setVideoError(false);
+  }, [currentVideoUrl]);
+
   // Update video source when quality changes
   useEffect(() => {
     if (videoRef.current && currentVideoUrl) {
       const wasPlaying = !videoRef.current.paused;
+      setVideoError(false); // Reset error when changing source
       videoRef.current.src = currentVideoUrl;
       videoRef.current.load();
       if (wasPlaying) {
-        videoRef.current.play().catch(() => setIsPlaying(false));
+        videoRef.current.play().catch(() => {
+          setIsPlaying(false);
+          setVideoError(true);
+        });
       }
     }
   }, [selectedQuality, currentVideoUrl]);
@@ -84,13 +121,17 @@ export default function VideoDetail() {
 
   // Video playback handlers
   const togglePlay = () => {
-    if (videoRef.current) {
+    if (videoRef.current && !videoError) {
       if (isPlaying) {
         videoRef.current.pause();
+        setIsPlaying(false);
       } else {
-        videoRef.current.play();
+        videoRef.current.play().catch((error) => {
+          console.error('Failed to play video:', error);
+          setVideoError(true);
+          setIsPlaying(false);
+        });
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -161,24 +202,60 @@ export default function VideoDetail() {
 
           {/* Video Player */}
           <div className="bg-black aspect-video w-full rounded-lg overflow-hidden shadow-2xl border border-[#333] relative group">
-            {currentVideoUrl ? (
+            {/* Thumbnail - Always visible when video is paused, has error, or no video URL */}
+            <img 
+              src={video.thumbnail} 
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                currentVideoUrl && isPlaying && !videoError ? 'opacity-0' : 'opacity-100'
+              }`}
+              alt={video.title} 
+            />
+            
+            {/* Video Error Message - Show when video fails to load */}
+            {videoError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 p-4">
+                <div className="text-center">
+                  <div className="text-red-500 mb-2">
+                    <Info className="h-12 w-12 md:h-16 md:w-16 mx-auto" />
+                  </div>
+                  <h3 className="text-white font-semibold text-sm md:text-base mb-1">Video Unavailable</h3>
+                  <p className="text-gray-400 text-xs md:text-sm">This video cannot be played. The video file may be corrupted or unavailable.</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Video Element - Only show when video URL is available and no error */}
+            {currentVideoUrl && !videoError && (
               <>
                 <video
                   ref={videoRef}
                   src={currentVideoUrl}
-                  className="w-full h-full object-contain"
+                  className={`w-full h-full object-contain transition-opacity duration-300 ${
+                    isPlaying ? 'opacity-100' : 'opacity-0'
+                  }`}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
-                  onPlay={() => setIsPlaying(true)}
+                  onPlay={() => {
+                    setIsPlaying(true);
+                    setVideoError(false);
+                  }}
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
                   onClick={togglePlay}
+                  onError={(e) => {
+                    console.error('Video error:', e);
+                    setVideoError(true);
+                    setIsPlaying(false);
+                  }}
+                  onLoadStart={() => {
+                    setVideoError(false);
+                  }}
                 />
                 
-                {/* Play/Pause Button Overlay */}
-                {!isPlaying && (
+                {/* Play Button Overlay - Show when paused and no error */}
+                {!isPlaying && !videoError && (
                   <div 
-                    className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                    className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
                     onClick={togglePlay}
                   >
                     <div className="bg-primary/90 p-6 md:p-8 rounded-full hover:scale-110 transition-transform shadow-[0_0_30px_rgba(213,45,45,0.5)]">
@@ -187,12 +264,6 @@ export default function VideoDetail() {
                   </div>
                 )}
               </>
-            ) : (
-              <img 
-                src={video.thumbnail} 
-                className="w-full h-full object-cover" 
-                alt={video.title} 
-              />
             )}
             
             {/* Video Controls */}
@@ -354,7 +425,7 @@ export default function VideoDetail() {
           </div>
 
           {/* FapHouse Banner */}
-          <div className="bg-[#2a2a2a] rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          {/* <div className="bg-[#2a2a2a] rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="text-white font-semibold mb-1 text-sm md:text-base truncate">{video.author}</div>
               <div className="text-xs md:text-sm text-gray-400">Join me on FapHouse and watch Full videos</div>
@@ -363,7 +434,7 @@ export default function VideoDetail() {
             <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 md:px-6 text-xs md:text-sm h-9 md:h-10 w-full sm:w-auto whitespace-nowrap">
               GET FULL VIDEO
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Related Videos Tabs */}
@@ -410,8 +481,12 @@ export default function VideoDetail() {
 
           {/* Related Videos Grid - 2 columns on mobile, 6 on desktop */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4 mb-6 md:mb-8">
-            {Array.isArray(relatedVideos) && relatedVideos.length > 0 ? (
-              relatedVideos.slice(0, 12).map((relatedVideo: VideoResponse) => (
+            {allRelatedVideos.length > 0 ? (
+              allRelatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse) => (
+                <VideoCard key={relatedVideo.id} video={relatedVideo} />
+              ))
+            ) : Array.isArray(relatedVideos) && relatedVideos.length > 0 ? (
+              relatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse) => (
                 <VideoCard key={relatedVideo.id} video={relatedVideo} />
               ))
             ) : (
@@ -421,11 +496,39 @@ export default function VideoDetail() {
             )}
           </div>
 
-          <div className="flex justify-center mb-6 md:mb-8">
-            <Button variant="outline" className="bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333] text-xs md:text-sm h-9 md:h-10 px-4 md:px-6">
-              Show more related videos <ChevronDown className="h-3 w-3 md:h-4 md:w-4 ml-2" />
-            </Button>
-          </div>
+          {/* Show More Button - Only show if there are more videos to load */}
+          {(allRelatedVideos.length > videosToShow || (Array.isArray(relatedVideos) && relatedVideos.length >= videosToShow)) && (
+            <div className="flex justify-center mb-6 md:mb-8">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const currentDisplayed = videosToShow;
+                  const availableVideos = allRelatedVideos.length > 0 ? allRelatedVideos.length : (Array.isArray(relatedVideos) ? relatedVideos.length : 0);
+                  
+                  // If we've shown all available videos, load next page
+                  if (currentDisplayed >= availableVideos) {
+                    setRelatedVideosPage(prev => prev + 1);
+                  }
+                  
+                  // Show 12 more videos
+                  setVideosToShow(prev => prev + 12);
+                }}
+                disabled={isLoadingMoreVideos}
+                className="bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333] text-xs md:text-sm h-9 md:h-10 px-4 md:px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingMoreVideos ? (
+                  <>
+                    <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    Show more related videos <ChevronDown className="h-3 w-3 md:h-4 md:w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         </div>
