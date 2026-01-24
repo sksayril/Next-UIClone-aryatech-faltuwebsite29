@@ -114,12 +114,24 @@ export default function VideoDetail() {
   // Close quality menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showQualityMenu && !(event.target as Element).closest('.quality-menu-container')) {
+      const target = event.target as Element;
+      if (showQualityMenu && !target.closest('.quality-menu-container')) {
         setShowQualityMenu(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showQualityMenu) {
+        setShowQualityMenu(false);
+      }
+    };
+    if (showQualityMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [showQualityMenu]);
 
   // Load video when URL is available
@@ -260,7 +272,7 @@ export default function VideoDetail() {
           </div>
 
           {/* Video Player */}
-          <div className="bg-black aspect-video w-full rounded-lg overflow-hidden shadow-2xl border border-[#333] relative group" style={{ position: 'relative', minHeight: '400px' }}>
+          <div className="bg-black aspect-video w-full rounded-lg overflow-visible shadow-2xl border border-[#333] relative group" style={{ position: 'relative', minHeight: '400px' }}>
             {/* Thumbnail - Always visible when video is paused, has error, or no video URL */}
             {!thumbnailError && video.thumbnail && (
               <img 
@@ -500,7 +512,7 @@ export default function VideoDetail() {
             )}
             
             {/* Video Controls */}
-            <div className="absolute bottom-0 left-0 right-0 h-14 md:h-16 bg-gradient-to-t from-black/90 to-transparent flex items-end px-2 md:px-4 py-2">
+            <div className="absolute bottom-0 left-0 right-0 h-14 md:h-16 bg-gradient-to-t from-black/90 to-transparent flex items-end px-2 md:px-4 py-2 z-50">
               <div className="w-full space-y-1 md:space-y-2">
                 {/* Progress Bar */}
                 <div 
@@ -520,7 +532,8 @@ export default function VideoDetail() {
                   <div className="flex items-center gap-1 md:gap-2">
                     <button 
                       onClick={togglePlay}
-                      className="hover:opacity-80 transition-opacity"
+                      className="hover:opacity-80 transition-opacity z-50"
+                      type="button"
                     >
                       {isPlaying ? (
                         <Pause className="h-4 w-4 md:h-5 md:w-5 text-white fill-current" />
@@ -531,7 +544,7 @@ export default function VideoDetail() {
                     <span className="text-[10px] md:text-xs text-white whitespace-nowrap">
                       {formatTime(currentTime)} / {duration ? formatTime(duration) : (video.duration || '0:00')}
                     </span>
-                    <button className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block">
+                    <button className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block" type="button">
                       <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </button>
                   </div>
@@ -539,37 +552,79 @@ export default function VideoDetail() {
                     <span className="text-[10px] md:text-xs text-white hidden sm:inline">1x</span>
                     {/* Quality Selection */}
                     {availableQualities.length > 0 && (
-                      <div className="relative quality-menu-container">
+                      <div className="relative quality-menu-container z-50">
                         <button 
-                          onClick={() => setShowQualityMenu(!showQualityMenu)}
-                          className="hover:opacity-80 transition-opacity flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowQualityMenu(!showQualityMenu);
+                          }}
+                          className="hover:opacity-80 transition-opacity flex items-center gap-1 z-50"
+                          type="button"
                         >
                           <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
                           <span className="text-[10px] md:text-xs text-white hidden sm:inline">{selectedQuality}</span>
                         </button>
                         {showQualityMenu && (
-                          <div className="absolute bottom-full right-0 mb-2 bg-[#2a2a2a] rounded-lg shadow-lg border border-[#333] min-w-[120px] z-10">
-                            {availableQualities.map((quality) => (
-                              <button
-                                key={quality}
-                                onClick={() => {
-                                  setSelectedQuality(quality);
-                                  setShowQualityMenu(false);
-                                }}
-                                className={`w-full text-left px-4 py-2 text-xs md:text-sm hover:bg-[#333] transition-colors ${
-                                  selectedQuality === quality ? 'text-primary font-semibold' : 'text-white'
-                                }`}
-                              >
-                                {quality.toUpperCase()}
-                              </button>
-                            ))}
-                          </div>
+                          <>
+                            {/* Backdrop to catch clicks outside */}
+                            <div 
+                              className="fixed inset-0 z-[99]"
+                              onClick={() => setShowQualityMenu(false)}
+                              style={{ zIndex: 99 }}
+                            />
+                            {/* Quality Menu */}
+                            <div 
+                              className="absolute bottom-full right-0 mb-2 bg-[#2a2a2a] rounded-lg shadow-2xl border border-[#333] min-w-[120px] overflow-hidden"
+                              style={{ 
+                                zIndex: 100,
+                                position: 'absolute',
+                                bottom: '100%',
+                                right: 0,
+                                marginBottom: '0.5rem'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {availableQualities.map((quality, index) => (
+                                <button
+                                  key={quality}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedQuality(quality);
+                                    setShowQualityMenu(false);
+                                  }}
+                                  className={`w-full text-left px-4 py-2 text-xs md:text-sm hover:bg-[#333] transition-colors ${
+                                    index === 0 ? 'rounded-t-lg' : ''
+                                  } ${
+                                    index === availableQualities.length - 1 ? 'rounded-b-lg' : ''
+                                  } ${
+                                    selectedQuality === quality ? 'text-primary font-semibold bg-[#333]' : 'text-white'
+                                  }`}
+                                  type="button"
+                                >
+                                  {quality.toUpperCase()}
+                                </button>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
                     <button 
-                      onClick={() => videoRef.current?.requestFullscreen()}
+                      onClick={() => {
+                        if (videoRef.current) {
+                          if (videoRef.current.requestFullscreen) {
+                            videoRef.current.requestFullscreen();
+                          } else if ((videoRef.current as any).webkitRequestFullscreen) {
+                            (videoRef.current as any).webkitRequestFullscreen();
+                          } else if ((videoRef.current as any).mozRequestFullScreen) {
+                            (videoRef.current as any).mozRequestFullScreen();
+                          } else if ((videoRef.current as any).msRequestFullscreen) {
+                            (videoRef.current as any).msRequestFullscreen();
+                          }
+                        }
+                      }}
                       className="hover:opacity-80 transition-opacity hidden sm:block"
+                      type="button"
                     >
                       <Maximize className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </button>
