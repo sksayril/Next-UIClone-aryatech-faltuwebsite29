@@ -22,9 +22,19 @@ export default function VideoDetail() {
   const [relatedVideosPage, setRelatedVideosPage] = useState(1);
   const [allRelatedVideos, setAllRelatedVideos] = useState<VideoResponse[]>([]);
   const [videoError, setVideoError] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [thumbnailVideoPlaying, setThumbnailVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const thumbnailVideoRef = useRef<HTMLVideoElement>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
+  
+  // Initialize thumbnailError if thumbnail is missing or empty when video loads
+  useEffect(() => {
+    if (video) {
+      setThumbnailError(!video.thumbnail || video.thumbnail.trim() === '');
+    }
+  }, [video]);
   const { data: relatedVideosResponse, isLoading: isLoadingMoreVideos } = useVideos({ 
     sort: 'popular',
     page: relatedVideosPage,
@@ -78,7 +88,12 @@ export default function VideoDetail() {
   // Reset error state when video URL changes
   useEffect(() => {
     setVideoError(false);
-  }, [currentVideoUrl]);
+    setThumbnailVideoPlaying(false);
+    // Reset thumbnail error when video changes, but check if thumbnail exists
+    if (video) {
+      setThumbnailError(!video.thumbnail || video.thumbnail.trim() === '');
+    }
+  }, [currentVideoUrl, video]);
 
   // Update video source when quality changes
   useEffect(() => {
@@ -113,6 +128,25 @@ export default function VideoDetail() {
       videoRef.current.load();
     }
   }, [currentVideoUrl]);
+
+  // Pause thumbnail video when main video is playing
+  useEffect(() => {
+    if (thumbnailVideoRef.current) {
+      if (isPlaying) {
+        thumbnailVideoRef.current.pause();
+        setThumbnailVideoPlaying(false);
+      } else if (thumbnailError && !isPlaying && !thumbnailVideoPlaying) {
+        // Resume thumbnail video when main video is paused
+        thumbnailVideoRef.current.play()
+          .then(() => {
+            setThumbnailVideoPlaying(true);
+          })
+          .catch(() => {
+            // Auto-play failed, ignore
+          });
+      }
+    }
+  }, [isPlaying, thumbnailError, thumbnailVideoPlaying]);
 
   // Format numbers
   const formatNumber = (num: string) => {
@@ -203,13 +237,150 @@ export default function VideoDetail() {
           {/* Video Player */}
           <div className="bg-black aspect-video w-full rounded-lg overflow-hidden shadow-2xl border border-[#333] relative group">
             {/* Thumbnail - Always visible when video is paused, has error, or no video URL */}
-            <img 
-              src={video.thumbnail} 
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                currentVideoUrl && isPlaying && !videoError ? 'opacity-0' : 'opacity-100'
-              }`}
-              alt={video.title} 
-            />
+            {!thumbnailError && video.thumbnail && (
+              <img 
+                src={video.thumbnail} 
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  currentVideoUrl && isPlaying && !videoError ? 'opacity-0' : 'opacity-100'
+                }`}
+                alt={video.title}
+                onError={(e) => {
+                  // Detect 404 or any image load error
+                  const img = e.currentTarget;
+                  // Check if it's a 404 or invalid image
+                  if (img.naturalWidth === 0 || img.naturalHeight === 0 || !img.complete) {
+                    setThumbnailError(true);
+                  }
+                  // Also check the error event itself
+                  setThumbnailError(true);
+                }}
+                onLoad={(e) => {
+                  // Check if image actually loaded (not a placeholder or broken)
+                  const img = e.currentTarget;
+                  if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                    setThumbnailError(true);
+                  }
+                }}
+                onAbort={() => {
+                  // Image load was aborted (404, network error, etc.)
+                  setThumbnailError(true);
+                }}
+              />
+            )}
+
+            {/* Video as Thumbnail - Show when thumbnail fails to load (404 error) */}
+            {(!video.thumbnail || thumbnailError) && !isPlaying && (
+              <>
+                {currentVideoUrl ? (
+                  <video
+                    ref={thumbnailVideoRef}
+                    src={currentVideoUrl}
+                    key={currentVideoUrl} // Force re-render when URL changes
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    preload="auto"
+                    loop
+                    onLoadedMetadata={(e) => {
+                      const videoEl = e.currentTarget;
+                      // Set initial position to a random section (0-30% of video) for variety
+                      if (videoEl.duration && isFinite(videoEl.duration)) {
+                        const randomPosition = Math.random() * 0.3; // Random between 0% and 30%
+                        videoEl.currentTime = videoEl.duration * randomPosition;
+                      }
+                      // Force load and play
+                      videoEl.load();
+                      // Auto-play the video as thumbnail
+                      const playVideo = () => {
+                        videoEl.play()
+                          .then(() => {
+                            setThumbnailVideoPlaying(true);
+                          })
+                          .catch(() => {
+                            // Auto-play failed, try again after a short delay
+                            setTimeout(() => {
+                              videoEl.play()
+                                .then(() => {
+                                  setThumbnailVideoPlaying(true);
+                                })
+                                .catch(() => {
+                                  // Still failed, try with user interaction simulation
+                                  videoEl.muted = true;
+                                  videoEl.play().catch(() => {});
+                                });
+                            }, 200);
+                          });
+                      };
+                      playVideo();
+                    }}
+                    onCanPlay={(e) => {
+                      // Also try to play when video can play
+                      const videoEl = e.currentTarget;
+                      if (videoEl.paused && !thumbnailVideoPlaying) {
+                        videoEl.play()
+                          .then(() => {
+                            setThumbnailVideoPlaying(true);
+                          })
+                          .catch(() => {
+                            // Auto-play failed, ignore
+                          });
+                      }
+                    }}
+                    onLoadedData={(e) => {
+                      // Try to play when data is loaded
+                      const videoEl = e.currentTarget;
+                      if (videoEl.paused && !thumbnailVideoPlaying) {
+                        videoEl.play()
+                          .then(() => {
+                            setThumbnailVideoPlaying(true);
+                          })
+                          .catch(() => {
+                            // Auto-play failed, ignore
+                          });
+                      }
+                    }}
+                    onPlaying={() => {
+                      setThumbnailVideoPlaying(true);
+                    }}
+                    onPause={() => {
+                      // Don't set to false on pause, only when video ends or errors
+                    }}
+                    onEnded={(e) => {
+                      const videoEl = e.currentTarget;
+                      // Loop back to random position (0-30%) when video ends
+                      if (videoEl.duration && isFinite(videoEl.duration)) {
+                        const randomPosition = Math.random() * 0.3; // Random between 0% and 30%
+                        videoEl.currentTime = videoEl.duration * randomPosition;
+                        videoEl.play()
+                          .then(() => {
+                            setThumbnailVideoPlaying(true);
+                          })
+                          .catch(() => {
+                            // Auto-play failed, ignore
+                          });
+                      }
+                    }}
+                    onError={(e) => {
+                      // If video also fails, show nothing (black background)
+                      console.debug('Video thumbnail also failed to load', e);
+                      setThumbnailVideoPlaying(false);
+                    }}
+                  />
+                ) : (
+                  // Show loading state while video URL is being fetched
+                  <div className="w-full h-full bg-black flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </>
+            )}
+            
+            {/* Loading state - Show while video is loading but not playing yet */}
+            {(!video.thumbnail || thumbnailError) && !isPlaying && currentVideoUrl && !thumbnailVideoPlaying && (
+              <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
             
             {/* Video Error Message - Show when video fails to load */}
             {videoError && (
