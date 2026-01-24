@@ -126,8 +126,24 @@ export default function VideoDetail() {
   useEffect(() => {
     if (videoRef.current && currentVideoUrl) {
       videoRef.current.load();
+      // Ensure video element is properly configured
+      videoRef.current.style.display = 'block';
+      videoRef.current.style.position = 'absolute';
+      videoRef.current.style.top = '0';
+      videoRef.current.style.left = '0';
+      videoRef.current.style.width = '100%';
+      videoRef.current.style.height = '100%';
     }
   }, [currentVideoUrl]);
+
+  // Ensure video is visible when playing
+  useEffect(() => {
+    if (videoRef.current && isPlaying) {
+      videoRef.current.style.opacity = '1';
+      videoRef.current.style.display = 'block';
+      videoRef.current.style.zIndex = '10';
+    }
+  }, [isPlaying]);
 
   // Pause thumbnail video when main video is playing
   useEffect(() => {
@@ -189,9 +205,18 @@ export default function VideoDetail() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+  const formatTime = (seconds: number | null | undefined) => {
+    if (seconds === null || seconds === undefined || !isFinite(seconds) || seconds < 0) {
+      return '0:00';
+    }
+    const totalSeconds = Math.floor(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -235,12 +260,12 @@ export default function VideoDetail() {
           </div>
 
           {/* Video Player */}
-          <div className="bg-black aspect-video w-full rounded-lg overflow-hidden shadow-2xl border border-[#333] relative group">
+          <div className="bg-black aspect-video w-full rounded-lg overflow-hidden shadow-2xl border border-[#333] relative group" style={{ position: 'relative', minHeight: '400px' }}>
             {/* Thumbnail - Always visible when video is paused, has error, or no video URL */}
             {!thumbnailError && video.thumbnail && (
               <img 
                 src={video.thumbnail} 
-                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 z-0 ${
                   currentVideoUrl && isPlaying && !videoError ? 'opacity-0' : 'opacity-100'
                 }`}
                 alt={video.title}
@@ -276,7 +301,7 @@ export default function VideoDetail() {
                     ref={thumbnailVideoRef}
                     src={currentVideoUrl}
                     key={currentVideoUrl} // Force re-render when URL changes
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover z-0"
                     muted
                     playsInline
                     preload="auto"
@@ -401,16 +426,34 @@ export default function VideoDetail() {
                 <video
                   ref={videoRef}
                   src={currentVideoUrl}
-                  className={`w-full h-full object-contain transition-opacity duration-300 ${
-                    isPlaying ? 'opacity-100' : 'opacity-0'
-                  }`}
+                  className="absolute inset-0 w-full h-full z-10"
+                  style={{ 
+                    backgroundColor: '#000',
+                    objectFit: 'contain',
+                    opacity: isPlaying ? 1 : 0,
+                    transition: 'opacity 0.3s ease-in-out',
+                    pointerEvents: isPlaying ? 'auto' : 'none'
+                  }}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onPlay={() => {
                     setIsPlaying(true);
                     setVideoError(false);
+                    // Ensure video is visible
+                    if (videoRef.current) {
+                      videoRef.current.style.opacity = '1';
+                      videoRef.current.style.zIndex = '10';
+                      videoRef.current.style.display = 'block';
+                    }
                   }}
-                  onPause={() => setIsPlaying(false)}
+                  onPause={() => {
+                    setIsPlaying(false);
+                    // Keep video visible when paused (for seeking)
+                    if (videoRef.current) {
+                      videoRef.current.style.opacity = '1';
+                      videoRef.current.style.display = 'block';
+                    }
+                  }}
                   onEnded={() => setIsPlaying(false)}
                   onClick={togglePlay}
                   onError={(e) => {
@@ -421,6 +464,25 @@ export default function VideoDetail() {
                   onLoadStart={() => {
                     setVideoError(false);
                   }}
+                  onLoadedData={() => {
+                    // Ensure video is ready to display
+                    if (videoRef.current) {
+                      videoRef.current.style.display = 'block';
+                      if (isPlaying) {
+                        videoRef.current.style.opacity = '1';
+                      }
+                    }
+                  }}
+                  onCanPlay={() => {
+                    // Video is ready to play
+                    if (videoRef.current && isPlaying) {
+                      videoRef.current.style.opacity = '1';
+                      videoRef.current.style.display = 'block';
+                    }
+                  }}
+                  playsInline
+                  muted={false}
+                  controls={false}
                 />
                 
                 {/* Play Button Overlay - Show when paused and no error */}
@@ -466,8 +528,8 @@ export default function VideoDetail() {
                         <Play className="h-4 w-4 md:h-5 md:w-5 text-white fill-current" />
                       )}
                     </button>
-                    <span className="text-[10px] md:text-xs text-white">
-                      {formatTime(currentTime)} / {duration ? formatTime(duration) : video.duration}
+                    <span className="text-[10px] md:text-xs text-white whitespace-nowrap">
+                      {formatTime(currentTime)} / {duration ? formatTime(duration) : (video.duration || '0:00')}
                     </span>
                     <button className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block">
                       <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
