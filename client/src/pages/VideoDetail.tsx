@@ -478,20 +478,56 @@ export default function VideoDetail() {
             
             {/* Video Error Message - Show when video fails to load */}
             {videoError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 p-4">
+              <div 
+                className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 p-4"
+                style={{ 
+                  zIndex: 50,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0
+                }}
+              >
                 <div className="text-center">
                   <div className="text-red-500 mb-2">
                     <Info className="h-12 w-12 md:h-16 md:w-16 mx-auto" />
                   </div>
-                  <h3 className="text-white font-semibold text-sm md:text-base mb-1">Video Unavailable</h3>
-                  <p className="text-gray-400 text-xs md:text-sm">This video cannot be played. The video file may be corrupted or unavailable.</p>
+                  <h3 className="text-white font-semibold text-sm md:text-base mb-1">Video Cannot Load</h3>
+                  <p className="text-gray-400 text-xs md:text-sm mb-4">This video cannot be played. The video file may be corrupted or unavailable.</p>
+                  <button
+                    onClick={() => {
+                      setVideoError(false);
+                      setIsVideoLoading(true);
+                      if (videoRef.current && currentVideoUrl) {
+                        videoRef.current.load();
+                        videoRef.current.play().catch(() => {
+                          setVideoError(true);
+                          setIsVideoLoading(false);
+                        });
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded transition-colors"
+                  >
+                    Retry
+                  </button>
                 </div>
               </div>
             )}
             
             {/* Video Loading Indicator - Show when video is loading */}
             {isVideoLoading && currentVideoUrl && !videoError && (
-              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30">
+              <div 
+                className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center"
+                style={{ 
+                  zIndex: 40,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0
+                }}
+              >
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-12 w-12 md:h-16 md:w-16 animate-spin text-primary" />
                   <p className="text-white text-sm md:text-base font-medium">Loading video...</p>
@@ -501,21 +537,19 @@ export default function VideoDetail() {
 
             {/* Video Element - Only show when video URL is available and no error */}
             {currentVideoUrl && !videoError && (
-              <>
                 <video
                   ref={videoRef}
                   src={currentVideoUrl}
-                  className="absolute inset-0 w-full h-full z-10"
+                  className="w-full h-full"
                   style={{ 
                     backgroundColor: '#000',
                     objectFit: 'contain',
-                    opacity: isPlaying ? 1 : 0,
-                    transition: 'opacity 0.3s ease-in-out',
-                    pointerEvents: isPlaying ? 'auto' : 'none'
+                    display: 'block',
+                    position: 'relative',
+                    zIndex: 10
                   }}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
-                  onClick={togglePlay}
                   onError={(e) => {
                     console.error('Video error:', e);
                     setVideoError(true);
@@ -524,29 +558,16 @@ export default function VideoDetail() {
                   }}
                   onLoadStart={() => {
                     setVideoError(false);
-                    // Show loading when video starts loading
-                    if (!isPlaying) {
-                      setIsVideoLoading(true);
-                    }
+                    // Always show loading when video starts loading
+                    setIsVideoLoading(true);
                   }}
                   onLoadedData={() => {
                     // Video data loaded
                     setIsVideoLoading(false);
-                    // Ensure video is ready to display
-                    if (videoRef.current) {
-                      videoRef.current.style.display = 'block';
-                      if (isPlaying) {
-                        videoRef.current.style.opacity = '1';
-                      }
-                    }
                   }}
                   onCanPlay={() => {
                     // Video is ready to play
                     setIsVideoLoading(false);
-                    if (videoRef.current && isPlaying) {
-                      videoRef.current.style.opacity = '1';
-                      videoRef.current.style.display = 'block';
-                    }
                   }}
                   onCanPlayThrough={() => {
                     // Video can play through without buffering
@@ -563,23 +584,10 @@ export default function VideoDetail() {
                     setIsPlaying(true);
                     setIsVideoLoading(false);
                     setVideoError(false);
-                    setShowControls(true);
-                    // Ensure video is visible
-                    if (videoRef.current) {
-                      videoRef.current.style.opacity = '1';
-                      videoRef.current.style.zIndex = '10';
-                      videoRef.current.style.display = 'block';
-                    }
                   }}
                   onPause={() => {
                     setIsPlaying(false);
                     setIsVideoLoading(false);
-                    setShowControls(true);
-                    // Keep video visible when paused
-                    if (videoRef.current) {
-                      videoRef.current.style.opacity = '1';
-                      videoRef.current.style.display = 'block';
-                    }
                   }}
                   onEnded={() => {
                     setIsPlaying(false);
@@ -595,25 +603,14 @@ export default function VideoDetail() {
                   }}
                   playsInline
                   muted={isMuted}
-                  controls={false}
+                  controls
                   preload="metadata"
                 />
-                
-                {/* Play Button Overlay - Show when paused and no error */}
-                {!isPlaying && !videoError && (
-                  <div 
-                    className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
-                    onClick={togglePlay}
-                  >
-                    <div className="bg-primary/90 p-6 md:p-8 rounded-full hover:scale-110 transition-transform shadow-[0_0_30px_rgba(213,45,45,0.5)]">
-                      <Play className="h-10 w-10 md:h-12 md:w-12 text-white fill-current ml-1" />
-                    </div>
-                  </div>
-                )}
-              </>
             )}
             
-            {/* Video Controls - Always visible in production */}
+            {/* Custom Video Controls - Hidden when using default browser controls */}
+            {/* Default browser controls are enabled on the video element above */}
+            {false && (
             <div 
               className="absolute bottom-0 left-0 right-0 h-14 md:h-16 bg-gradient-to-t from-black/90 to-transparent flex items-end px-2 md:px-4 py-2 z-50"
               style={{ 
@@ -761,6 +758,7 @@ export default function VideoDetail() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
 
