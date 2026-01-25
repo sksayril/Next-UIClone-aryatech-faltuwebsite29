@@ -42,7 +42,26 @@ export function VideoCard({ video }: VideoCardProps) {
   const thumbnailVideoUrl = video.previewVideo || videoDetails?.previewVideo || (video as any)?.videoQualities?.['720p'] || (video as any)?.videoQualities?.['480p'] || (video as any)?.videoQualities?.['1080p'];
 
   // Format views to match the image (e.g., "115.1M views")
-  const formatViews = (views: string) => {
+  const formatViews = (views: string | null | undefined) => {
+    if (!views || views.trim() === '') {
+      return '0';
+    }
+    // If views already contains "K" or "M", return as-is
+    if (views.includes('K') || views.includes('M') || views.includes('views')) {
+      return views.replace(' views', '').trim();
+    }
+    // Try to parse as number and format
+    const viewsNum = parseInt(views.replace(/[^0-9]/g, ''));
+    if (!isNaN(viewsNum)) {
+      // Format large numbers
+      if (viewsNum >= 1000000) {
+        return (viewsNum / 1000000).toFixed(1) + 'M';
+      } else if (viewsNum >= 1000) {
+        return (viewsNum / 1000).toFixed(1) + 'K';
+      }
+      return viewsNum.toString();
+    }
+    // Return as-is if can't parse
     return views;
   };
 
@@ -401,13 +420,20 @@ export function VideoCard({ video }: VideoCardProps) {
           </div>
         )}
 
-        {/* Duration Overlay - Bottom Right */}
-        <div className="absolute bottom-1 right-1 bg-black/90 text-white text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+        {/* Duration Overlay - Bottom Right - Commented out */}
+        {/* <div className="absolute bottom-1 right-1 bg-black/90 text-white text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
           {video.is4k && (
             <span className="bg-white text-black text-[9px] font-bold px-1 rounded uppercase">4K</span>
           )}
           <span>{displayDuration}</span>
-        </div>
+        </div> */}
+        
+        {/* Quality Badges Only - Show 4K badge without duration */}
+        {video.is4k && (
+          <div className="absolute bottom-1 right-1 bg-black/90 text-white text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+            <span className="bg-white text-black text-[9px] font-bold px-1 rounded uppercase">4K</span>
+          </div>
+        )}
         
         {/* Quality Badges - Top Right (if not 4K) */}
         {!video.is4k && (
@@ -446,10 +472,18 @@ export function VideoCard({ video }: VideoCardProps) {
           {video.title}
         </a>
         
-        <div className="flex items-center text-[10px] sm:text-xs text-gray-400 gap-1 sm:gap-1.5">
-          <span className="hover:text-gray-300 cursor-pointer truncate">{video.author}</span>
-          <span>|</span>
-          <span className="whitespace-nowrap">{formatViews(video.views)} views</span>
+        {/* Channel and Views Info - Attractive Display */}
+        <div className="flex items-center text-[10px] sm:text-xs gap-1.5 sm:gap-2 flex-wrap">
+          {/* Channel Name - Always visible */}
+          {/* <span className="hover:text-white cursor-pointer truncate font-medium text-gray-300 transition-colors">
+            {video.author || `Channel${video.id || ''}`}
+          </span> */}
+          {/* Separator */}
+          {/* <span className="text-gray-500">|</span> */}
+          {/* Views Count - Always visible */}
+          <span className="whitespace-nowrap text-gray-300 font-medium">
+            {formatViews(video.views || '0')} views
+          </span>
         </div>
       </div>
     </div>

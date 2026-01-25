@@ -165,6 +165,35 @@ export default function VideoDetail() {
     }
   }, [isPlaying]);
 
+  // Get duration from video element when it's ready
+  useEffect(() => {
+    if (videoRef.current && currentVideoUrl) {
+      const checkDuration = () => {
+        if (videoRef.current && videoRef.current.duration && isFinite(videoRef.current.duration) && videoRef.current.duration > 0) {
+          setDuration(videoRef.current.duration);
+        }
+      };
+      
+      // Check immediately
+      checkDuration();
+      
+      // Also check after a short delay to catch duration when metadata loads
+      const timeout = setTimeout(checkDuration, 500);
+      
+      // Listen for duration change events
+      videoRef.current.addEventListener('durationchange', checkDuration);
+      videoRef.current.addEventListener('loadedmetadata', checkDuration);
+      
+      return () => {
+        clearTimeout(timeout);
+        if (videoRef.current) {
+          videoRef.current.removeEventListener('durationchange', checkDuration);
+          videoRef.current.removeEventListener('loadedmetadata', checkDuration);
+        }
+      };
+    }
+  }, [currentVideoUrl]);
+
   // Pause thumbnail video when main video is playing
   useEffect(() => {
     if (thumbnailVideoRef.current) {
@@ -236,8 +265,10 @@ export default function VideoDetail() {
   };
 
   const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+    if (videoRef.current && videoRef.current.duration && isFinite(videoRef.current.duration)) {
+      const videoDuration = videoRef.current.duration;
+      setDuration(videoDuration);
+      console.log('Video duration loaded:', videoDuration, formatTime(videoDuration));
     }
   };
 
@@ -549,7 +580,15 @@ export default function VideoDetail() {
                     zIndex: 10
                   }}
                   onTimeUpdate={handleTimeUpdate}
-                  onLoadedMetadata={handleLoadedMetadata}
+                  onLoadedMetadata={(e) => {
+                    // Get duration from video element
+                    const videoEl = e.currentTarget;
+                    if (videoEl.duration && isFinite(videoEl.duration)) {
+                      setDuration(videoEl.duration);
+                      console.log('Video duration from metadata:', videoEl.duration, formatTime(videoEl.duration));
+                    }
+                    handleLoadedMetadata();
+                  }}
                   onError={(e) => {
                     console.error('Video error:', e);
                     setVideoError(true);
@@ -562,11 +601,17 @@ export default function VideoDetail() {
                     setIsVideoLoading(true);
                   }}
                   onLoadedData={() => {
-                    // Video data loaded
+                    // Video data loaded - also try to get duration here
+                    if (videoRef.current && videoRef.current.duration && isFinite(videoRef.current.duration)) {
+                      setDuration(videoRef.current.duration);
+                    }
                     setIsVideoLoading(false);
                   }}
                   onCanPlay={() => {
-                    // Video is ready to play
+                    // Video is ready to play - ensure duration is set
+                    if (videoRef.current && videoRef.current.duration && isFinite(videoRef.current.duration)) {
+                      setDuration(videoRef.current.duration);
+                    }
                     setIsVideoLoading(false);
                   }}
                   onCanPlayThrough={() => {
@@ -653,9 +698,11 @@ export default function VideoDetail() {
                         <Play className="h-4 w-4 md:h-5 md:w-5 text-white fill-current" />
                       )}
                     </button>
-                    <span className="text-[10px] md:text-xs text-white whitespace-nowrap">
-                      {formatTime(currentTime)} / {duration ? formatTime(duration) : (video.duration || '0:00')}
-                    </span>
+                    {/* Video Duration Display in Controls - Commented out */}
+                    {/* <span className="text-[10px] md:text-xs text-white whitespace-nowrap">
+                      Current Time / Total Duration
+                      {formatTime(currentTime)} / {duration && duration > 0 ? formatTime(duration) : (video.duration || '0:00')}
+                    </span> */}
                     <button 
                       className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block relative" 
                       type="button"
@@ -772,9 +819,17 @@ export default function VideoDetail() {
               <span>{formatNumber(video.views)} views</span>
               <span className="hidden sm:inline">{video.rating}%</span>
             </div>
-            <div className="text-xs md:text-sm text-gray-400">
-              {duration ? formatTime(duration) : video.duration}
-            </div>
+            {/* Video Duration Display - Commented out */}
+            {/* <div className="text-xs md:text-sm text-gray-400">
+              Show video duration: Use actual duration from video element metadata, fallback to video.duration from API
+              {duration && duration > 0 ? (
+                <span>{formatTime(duration)}</span>
+              ) : video.duration ? (
+                <span>{video.duration}</span>
+              ) : (
+                <span>0:00</span>
+              )}
+            </div> */}
           </div>
 
           {/* Channel Info */}
