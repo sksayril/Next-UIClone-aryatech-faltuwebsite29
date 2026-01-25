@@ -24,8 +24,14 @@ export default function VideoDetail() {
   const [videoError, setVideoError] = useState(false);
   const [thumbnailError, setThumbnailError] = useState(false);
   const [thumbnailVideoPlaying, setThumbnailVideoPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isHoveringPlayer, setIsHoveringPlayer] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbnailVideoRef = useRef<HTMLVideoElement>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
   
@@ -89,6 +95,8 @@ export default function VideoDetail() {
   useEffect(() => {
     setVideoError(false);
     setThumbnailVideoPlaying(false);
+    setIsVideoLoading(false);
+    setIsPlaying(false);
     // Reset thumbnail error when video changes, but check if thumbnail exists
     if (video) {
       setThumbnailError(!video.thumbnail || video.thumbnail.trim() === '');
@@ -183,16 +191,40 @@ export default function VideoDetail() {
 
   // Video playback handlers
   const togglePlay = () => {
-    if (videoRef.current && !videoError) {
+    if (videoRef.current && !videoError && currentVideoUrl) {
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
+        setIsVideoLoading(false);
+        setShowControls(true); // Always show controls when paused
       } else {
-        videoRef.current.play().catch((error) => {
-          console.error('Failed to play video:', error);
-          setVideoError(true);
-          setIsPlaying(false);
-        });
+        // Show loading state when starting to play
+        setIsVideoLoading(true);
+        setShowControls(true);
+        
+        // Ensure video is loaded and ready
+        if (videoRef.current.readyState < 2) {
+          videoRef.current.load();
+        }
+        
+        // Play the video
+        const playPromise = videoRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              // Video started playing successfully
+              setIsPlaying(true);
+              setIsVideoLoading(false);
+              setVideoError(false);
+            })
+            .catch((error) => {
+              console.error('Failed to play video:', error);
+              setVideoError(true);
+              setIsPlaying(false);
+              setIsVideoLoading(false);
+            });
+        }
       }
     }
   };
@@ -272,7 +304,32 @@ export default function VideoDetail() {
           </div>
 
           {/* Video Player */}
-          <div className="bg-black aspect-video w-full rounded-lg overflow-visible shadow-2xl border border-[#333] relative group" style={{ position: 'relative', minHeight: '400px' }}>
+          <div 
+            className="bg-black aspect-video w-full rounded-lg overflow-visible shadow-2xl border border-[#333] relative group" 
+            style={{ position: 'relative', minHeight: '400px' }}
+            onMouseEnter={() => {
+              setIsHoveringPlayer(true);
+              setShowControls(true);
+              if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+                controlsTimeoutRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              setIsHoveringPlayer(false);
+              // Keep controls visible when paused, auto-hide when playing
+              if (!isPlaying) {
+                setShowControls(true);
+              }
+            }}
+            onMouseMove={() => {
+              // Show controls on mouse move
+              setShowControls(true);
+              if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+              }
+            }}
+          >
             {/* Thumbnail - Always visible when video is paused, has error, or no video URL */}
             {!thumbnailError && video.thumbnail && (
               <img 
@@ -432,6 +489,16 @@ export default function VideoDetail() {
               </div>
             )}
             
+            {/* Video Loading Indicator - Show when video is loading */}
+            {isVideoLoading && currentVideoUrl && !videoError && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-12 w-12 md:h-16 md:w-16 animate-spin text-primary" />
+                  <p className="text-white text-sm md:text-base font-medium">Loading video...</p>
+                </div>
+              </div>
+            )}
+
             {/* Video Element - Only show when video URL is available and no error */}
             {currentVideoUrl && !videoError && (
               <>
@@ -448,35 +515,23 @@ export default function VideoDetail() {
                   }}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
-                  onPlay={() => {
-                    setIsPlaying(true);
-                    setVideoError(false);
-                    // Ensure video is visible
-                    if (videoRef.current) {
-                      videoRef.current.style.opacity = '1';
-                      videoRef.current.style.zIndex = '10';
-                      videoRef.current.style.display = 'block';
-                    }
-                  }}
-                  onPause={() => {
-                    setIsPlaying(false);
-                    // Keep video visible when paused (for seeking)
-                    if (videoRef.current) {
-                      videoRef.current.style.opacity = '1';
-                      videoRef.current.style.display = 'block';
-                    }
-                  }}
-                  onEnded={() => setIsPlaying(false)}
                   onClick={togglePlay}
                   onError={(e) => {
                     console.error('Video error:', e);
                     setVideoError(true);
                     setIsPlaying(false);
+                    setIsVideoLoading(false);
                   }}
                   onLoadStart={() => {
                     setVideoError(false);
+                    // Show loading when video starts loading
+                    if (!isPlaying) {
+                      setIsVideoLoading(true);
+                    }
                   }}
                   onLoadedData={() => {
+                    // Video data loaded
+                    setIsVideoLoading(false);
                     // Ensure video is ready to display
                     if (videoRef.current) {
                       videoRef.current.style.display = 'block';
@@ -487,14 +542,61 @@ export default function VideoDetail() {
                   }}
                   onCanPlay={() => {
                     // Video is ready to play
+                    setIsVideoLoading(false);
                     if (videoRef.current && isPlaying) {
                       videoRef.current.style.opacity = '1';
                       videoRef.current.style.display = 'block';
                     }
                   }}
+                  onCanPlayThrough={() => {
+                    // Video can play through without buffering
+                    setIsVideoLoading(false);
+                  }}
+                  onWaiting={() => {
+                    // Video is waiting for data (buffering)
+                    if (isPlaying) {
+                      setIsVideoLoading(true);
+                    }
+                  }}
+                  onPlaying={() => {
+                    // Video started playing
+                    setIsPlaying(true);
+                    setIsVideoLoading(false);
+                    setVideoError(false);
+                    setShowControls(true);
+                    // Ensure video is visible
+                    if (videoRef.current) {
+                      videoRef.current.style.opacity = '1';
+                      videoRef.current.style.zIndex = '10';
+                      videoRef.current.style.display = 'block';
+                    }
+                  }}
+                  onPause={() => {
+                    setIsPlaying(false);
+                    setIsVideoLoading(false);
+                    setShowControls(true);
+                    // Keep video visible when paused
+                    if (videoRef.current) {
+                      videoRef.current.style.opacity = '1';
+                      videoRef.current.style.display = 'block';
+                    }
+                  }}
+                  onEnded={() => {
+                    setIsPlaying(false);
+                    setIsVideoLoading(false);
+                  }}
+                  onSeeking={() => {
+                    // Show loading when seeking
+                    setIsVideoLoading(true);
+                  }}
+                  onSeeked={() => {
+                    // Hide loading when seek completed
+                    setIsVideoLoading(false);
+                  }}
                   playsInline
-                  muted={false}
+                  muted={isMuted}
                   controls={false}
+                  preload="metadata"
                 />
                 
                 {/* Play Button Overlay - Show when paused and no error */}
@@ -511,8 +613,21 @@ export default function VideoDetail() {
               </>
             )}
             
-            {/* Video Controls */}
-            <div className="absolute bottom-0 left-0 right-0 h-14 md:h-16 bg-gradient-to-t from-black/90 to-transparent flex items-end px-2 md:px-4 py-2 z-50">
+            {/* Video Controls - Always visible in production */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-14 md:h-16 bg-gradient-to-t from-black/90 to-transparent flex items-end px-2 md:px-4 py-2 z-50"
+              style={{ 
+                zIndex: 50,
+                pointerEvents: 'auto',
+                opacity: 1
+              }}
+              onMouseEnter={() => {
+                setShowControls(true);
+                if (controlsTimeoutRef.current) {
+                  clearTimeout(controlsTimeoutRef.current);
+                }
+              }}
+            >
               <div className="w-full space-y-1 md:space-y-2">
                 {/* Progress Bar */}
                 <div 
@@ -544,8 +659,22 @@ export default function VideoDetail() {
                     <span className="text-[10px] md:text-xs text-white whitespace-nowrap">
                       {formatTime(currentTime)} / {duration ? formatTime(duration) : (video.duration || '0:00')}
                     </span>
-                    <button className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block" type="button">
-                      <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                    <button 
+                      className="hover:opacity-80 ml-1 md:ml-2 transition-opacity hidden sm:block relative" 
+                      type="button"
+                      onClick={() => {
+                        if (videoRef.current) {
+                          const newMuted = !isMuted;
+                          videoRef.current.muted = newMuted;
+                          setIsMuted(newMuted);
+                        }
+                      }}
+                    >
+                      {isMuted ? (
+                        <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" style={{ opacity: 0.5 }} />
+                      ) : (
+                        <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                      )}
                     </button>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2">
