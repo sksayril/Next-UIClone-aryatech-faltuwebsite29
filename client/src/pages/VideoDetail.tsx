@@ -295,77 +295,8 @@ export default function VideoDetail() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Initialize JuicyAds when component mounts and video is loaded
-  useEffect(() => {
-    // Only run in browser
-    if (typeof window === 'undefined' || typeof document === 'undefined' || !video) {
-      return;
-    }
-
-    // Function to initialize ads
-    const initAds = () => {
-      try {
-        // Ensure adsbyjuicy array exists - initialize it if it doesn't
-        if (typeof (window as any).adsbyjuicy === 'undefined') {
-          (window as any).adsbyjuicy = [];
-        }
-
-        // Make sure it's an array
-        if (!Array.isArray((window as any).adsbyjuicy)) {
-          (window as any).adsbyjuicy = [];
-        }
-
-        // Check if ad containers exist in DOM
-        const ad1 = document.getElementById('1109935');
-        const ad2 = document.getElementById('1109935-top');
-        
-        // Initialize each ad container separately
-        if (ad1) {
-          (window as any).adsbyjuicy.push({'adzone': 1109935});
-        }
-        if (ad2) {
-          (window as any).adsbyjuicy.push({'adzone': 1109935});
-        }
-      } catch (err) {
-        console.error('Error initializing ads:', err);
-      }
-    };
-
-    // Wait for script to load and DOM to be ready
-    const checkAndInit = () => {
-      // Check if JuicyAds script is loaded (adsbyjuicy should be defined)
-      if (typeof (window as any).adsbyjuicy !== 'undefined') {
-        initAds();
-        return true;
-      }
-      return false;
-    };
-
-    // Try multiple times with increasing delays
-    const timeouts: NodeJS.Timeout[] = [];
-    
-    // Try immediately
-    if (!checkAndInit()) {
-      timeouts.push(setTimeout(() => {
-        if (!checkAndInit()) {
-          timeouts.push(setTimeout(() => {
-            if (!checkAndInit()) {
-              timeouts.push(setTimeout(() => {
-                checkAndInit();
-              }, 2000));
-            }
-          }, 1500));
-        }
-      }, 500));
-    } else {
-      // If initialized immediately, also try again after a delay to ensure both ads load
-      timeouts.push(setTimeout(initAds, 1000));
-    }
-    
-    return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
-    };
-  }, [video]);
+  // Ad script is loaded globally in index.html
+  // The script will automatically populate divs with id="b3a4498413dba25bcd98e67937ca5a54"
 
   // Update document title with video title
   useDocumentTitle(
@@ -405,6 +336,13 @@ export default function VideoDetail() {
               <Info className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
             </div>
           </div> */}
+
+          {/* Ad Above Video Player */}
+          {video && (
+            <div className="mb-4 md:mb-6 flex justify-center" id="ad-above-player">
+              <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
+            </div>
+          )}
 
           {/* Video Player */}
           <div 
@@ -880,20 +818,14 @@ export default function VideoDetail() {
             )}
           </div>
           
-          {/* JuicyAds v3.0 - After Video Player */}
-          {video && (
-            <div className="mb-4 md:mb-6 flex justify-center" id="juicyads-after-player">
-              <ins id="1109935" data-width="300" data-height="100"></ins>
-            </div>
-          )}
         </div>
 
         {/* Video Info Section */}
         <div className="mb-4 md:mb-6">
-          {/* JuicyAds v3.0 - Above Title */}
+          {/* Ad Above Title */}
           {video && (
-            <div className="mb-3 md:mb-4 flex justify-center" id="juicyads-above-title">
-              <ins id="1109935-top" data-width="300" data-height="100"></ins>
+            <div className="mb-3 md:mb-4 flex justify-center" id="ad-above-title">
+              <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
             </div>
           )}
           
