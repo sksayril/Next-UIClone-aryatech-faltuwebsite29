@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { useLocation } from "wouter";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ className }: FilterSidebarProps) {
+  const [, setLocation] = useLocation();
   const [straightChecked, setStraightChecked] = useState(true);
   const [gayChecked, setGayChecked] = useState(false);
   const [transChecked, setTransChecked] = useState(false);
@@ -33,6 +35,12 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
   const [fpsOpen, setFpsOpen] = useState(false);
   const [excludeOpen, setExcludeOpen] = useState(false);
 
+  // Function to redirect to random page between 10 and 100
+  const handleFilterRedirect = () => {
+    const randomPage = Math.floor(Math.random() * (100 - 10 + 1)) + 10; // Random between 10 and 100
+    setLocation(`/page-${randomPage}`);
+  };
+
   const resetFilters = () => {
     setStraightChecked(true);
     setGayChecked(false);
@@ -40,6 +48,8 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
     setMinQuality(null);
     setVrOnly(false);
     setFullVideosOnly(false);
+    // Redirect on reset
+    handleFilterRedirect();
   };
 
   return (
@@ -53,7 +63,10 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
               <Checkbox 
                 id="straight" 
                 checked={straightChecked} 
-                onCheckedChange={(checked) => setStraightChecked(checked === true)} 
+                onCheckedChange={(checked) => {
+                  setStraightChecked(checked === true);
+                  handleFilterRedirect();
+                }} 
               />
               <label htmlFor="straight" className="text-sm text-gray-300 cursor-pointer flex items-center gap-1">
                 Straight <span className="text-red-500">♂</span><span className="text-blue-500">♀</span>
@@ -63,7 +76,10 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
               <Checkbox 
                 id="gay" 
                 checked={gayChecked} 
-                onCheckedChange={(checked) => setGayChecked(checked === true)} 
+                onCheckedChange={(checked) => {
+                  setGayChecked(checked === true);
+                  handleFilterRedirect();
+                }} 
               />
               <label htmlFor="gay" className="text-sm text-gray-300 cursor-pointer flex items-center gap-1">
                 Gay <span className="text-blue-500">♂</span><span className="text-blue-500">♂</span>
@@ -73,7 +89,10 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
               <Checkbox 
                 id="trans" 
                 checked={transChecked} 
-                onCheckedChange={(checked) => setTransChecked(checked === true)} 
+                onCheckedChange={(checked) => {
+                  setTransChecked(checked === true);
+                  handleFilterRedirect();
+                }} 
               />
               <label htmlFor="trans" className="text-sm text-gray-300 cursor-pointer flex items-center gap-1">
                 Transgender <span className="text-purple-500">⚧</span>
@@ -89,7 +108,10 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
             {["720p+", "1080p+", "2160p+"].map((quality) => (
               <button
                 key={quality}
-                onClick={() => setMinQuality(minQuality === quality ? null : quality)}
+                onClick={() => {
+                  setMinQuality(minQuality === quality ? null : quality);
+                  handleFilterRedirect();
+                }}
                 className={`px-3 py-1.5 text-xs rounded transition-colors ${
                   minQuality === quality
                     ? "bg-primary text-white"
@@ -105,7 +127,7 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
         {/* Sort by */}
         <div>
           <h3 className="text-sm font-semibold text-gray-300 mb-3">Sort by</h3>
-          <Select defaultValue="relevance">
+          <Select defaultValue="relevance" onValueChange={handleFilterRedirect}>
             <SelectTrigger className="w-full bg-[#2a2a2a] border-[#333] text-white">
               <SelectValue placeholder="Relevance" />
             </SelectTrigger>
@@ -128,6 +150,8 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
             <Input
               placeholder="Choose category"
               className="pl-8 bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
+              onFocus={handleFilterRedirect}
+              onChange={handleFilterRedirect}
             />
           </div>
         </div>
@@ -138,13 +162,19 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
             <span className="text-sm text-gray-300">VR Videos Only</span>
             <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold">VR</span>
           </div>
-          <Switch checked={vrOnly} onCheckedChange={setVrOnly} />
+          <Switch checked={vrOnly} onCheckedChange={(checked) => {
+            setVrOnly(checked);
+            handleFilterRedirect();
+          }} />
         </div>
 
         {/* Full videos only */}
         <div className="flex items-center justify-between py-1">
           <span className="text-sm text-gray-300">Full videos only</span>
-          <Switch checked={fullVideosOnly} onCheckedChange={setFullVideosOnly} />
+          <Switch checked={fullVideosOnly} onCheckedChange={(checked) => {
+            setFullVideosOnly(checked);
+            handleFilterRedirect();
+          }} />
         </div>
 
         {/* Duration (min) - Collapsible */}
@@ -163,11 +193,15 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
                 type="number"
                 placeholder="Min"
                 className="bg-[#2a2a2a] border-[#333] text-white"
+                onFocus={handleFilterRedirect}
+                onChange={handleFilterRedirect}
               />
               <Input
                 type="number"
                 placeholder="Max"
                 className="bg-[#2a2a2a] border-[#333] text-white"
+                onFocus={handleFilterRedirect}
+                onChange={handleFilterRedirect}
               />
             </div>
           </CollapsibleContent>
@@ -185,16 +219,16 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 space-y-2">
             <div className="space-y-2">
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Last 24 hours
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Last week
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Last month
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Last year
               </button>
             </div>
@@ -213,13 +247,13 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 space-y-2">
             <div className="space-y-2">
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Professional
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Amateur
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 Homemade
               </button>
             </div>
@@ -238,13 +272,13 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 space-y-2">
             <div className="space-y-2">
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 24 FPS
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 30 FPS
               </button>
-              <button className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
+              <button onClick={handleFilterRedirect} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded">
                 60 FPS
               </button>
             </div>
@@ -267,12 +301,17 @@ export function FilterSidebar({ className }: FilterSidebarProps) {
               <Input
                 placeholder="Search categories"
                 className="pl-8 bg-[#2a2a2a] border-[#333] text-white placeholder:text-gray-500"
+                onFocus={handleFilterRedirect}
+                onChange={handleFilterRedirect}
               />
             </div>
             <div className="space-y-1 mt-2">
               {["Anal", "Hardcore", "BDSM"].map((cat) => (
                 <div key={cat} className="flex items-center space-x-2">
-                  <Checkbox id={`exclude-${cat}`} />
+                  <Checkbox 
+                    id={`exclude-${cat}`} 
+                    onCheckedChange={handleFilterRedirect}
+                  />
                   <label htmlFor={`exclude-${cat}`} className="text-xs text-gray-400 cursor-pointer">
                     {cat}
                   </label>

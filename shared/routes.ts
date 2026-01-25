@@ -56,6 +56,24 @@ export const api = {
         200: z.array(z.custom<typeof categories.$inferSelect>()),
       },
     },
+  },
+  channels: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/channels',
+      responses: {
+        200: z.array(z.any()),
+      },
+    },
+  },
+  actors: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/actors',
+      responses: {
+        200: z.array(z.any()),
+      },
+    },
   }
 };
 

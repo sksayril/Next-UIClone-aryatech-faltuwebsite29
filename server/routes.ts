@@ -276,8 +276,157 @@ export async function registerRoutes(
   });
 
   app.get(api.categories.list.path, async (req, res) => {
-    // Categories are not available from external API, return empty array
-    res.json([]);
+    try {
+      // Fetch categories from external API
+      const apiUrl = buildExternalApiUrl('api/movies/categories', {});
+      console.log(`Fetching categories from API: ${apiUrl}`);
+      
+      const apiResponse = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!apiResponse.ok) {
+        console.error(`API returned status ${apiResponse.status} for categories`);
+        return res.status(apiResponse.status).json({ 
+          message: `Failed to fetch categories: ${apiResponse.statusText}` 
+        });
+      }
+      
+      const apiData = await apiResponse.json();
+      
+      // Map external API categories to our format
+      if (apiData.success && apiData.data && Array.isArray(apiData.data)) {
+        const mappedCategories = apiData.data
+          .filter((cat: any) => cat.IsActive !== false) // Only include active categories
+          .map((cat: any, index: number) => ({
+            id: index + 1,
+            name: cat.Name || 'Unnamed Category',
+            count: null, // Count not available from external API
+            slug: cat.Slug || null,
+            sortOrder: cat.SortOrder || index + 1
+          }))
+          .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by SortOrder
+        
+        console.log(`Returning ${mappedCategories.length} categories from API`);
+        return res.json(mappedCategories);
+      }
+      
+      console.log('API returned no data or invalid response for categories');
+      return res.json([]);
+    } catch (error) {
+      console.error('Error fetching categories from external API:', error);
+      return res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get(api.channels.list.path, async (req, res) => {
+    try {
+      // Fetch channels from external API
+      const apiUrl = buildExternalApiUrl('api/movies/channels', {});
+      console.log(`Fetching channels from API: ${apiUrl}`);
+      
+      const apiResponse = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!apiResponse.ok) {
+        console.error(`API returned status ${apiResponse.status} for channels`);
+        return res.status(apiResponse.status).json({ 
+          message: `Failed to fetch channels: ${apiResponse.statusText}` 
+        });
+      }
+      
+      const apiData = await apiResponse.json();
+      
+      // Map external API channels to our format
+      if (apiData.success && apiData.data && Array.isArray(apiData.data)) {
+        const mappedChannels = apiData.data
+          .filter((channel: any) => channel.IsActive !== false) // Only include active channels
+          .map((channel: any, index: number) => ({
+            id: index + 1,
+            name: channel.Name || 'Unnamed Channel',
+            description: channel.Description || '',
+            logo: channel.Logo || null,
+            slug: channel.Slug || null,
+            sortOrder: channel.SortOrder || index + 1
+          }))
+          .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by SortOrder
+        
+        console.log(`Returning ${mappedChannels.length} channels from API`);
+        return res.json(mappedChannels);
+      }
+      
+      console.log('API returned no data or invalid response for channels');
+      return res.json([]);
+    } catch (error) {
+      console.error('Error fetching channels from external API:', error);
+      return res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get(api.actors.list.path, async (req, res) => {
+    try {
+      // Fetch actors from external API
+      const apiUrl = buildExternalApiUrl('api/movies/actors', {});
+      console.log(`Fetching actors from API: ${apiUrl}`);
+      
+      const apiResponse = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (!apiResponse.ok) {
+        console.error(`API returned status ${apiResponse.status} for actors`);
+        return res.status(apiResponse.status).json({ 
+          message: `Failed to fetch actors: ${apiResponse.statusText}` 
+        });
+      }
+      
+      const apiData = await apiResponse.json();
+      
+      // Map external API actors to our format
+      if (apiData.success && apiData.data && Array.isArray(apiData.data)) {
+        const mappedActors = apiData.data
+          .filter((actor: any) => actor.IsActive !== false) // Only include active actors
+          .map((actor: any, index: number) => ({
+            id: index + 1,
+            name: actor.Name || 'Unnamed Actor',
+            description: actor.Description || '',
+            image: actor.Image || null,
+            dateOfBirth: actor.DateOfBirth || null,
+            nationality: actor.Nationality || null,
+            slug: actor.Slug || null,
+            sortOrder: actor.SortOrder || index + 1
+          }))
+          .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)); // Sort by SortOrder
+        
+        console.log(`Returning ${mappedActors.length} actors from API`);
+        return res.json(mappedActors);
+      }
+      
+      console.log('API returned no data or invalid response for actors');
+      return res.json([]);
+    } catch (error) {
+      console.error('Error fetching actors from external API:', error);
+      return res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   return httpServer;

@@ -75,7 +75,50 @@ export function useCategories() {
     queryFn: async () => {
       const res = await fetch(api.categories.list.path, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch categories");
-      return api.categories.list.responses[200].parse(await res.json());
+      const data = await res.json();
+      // Handle both array response and object with data array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      return data;
+    },
+  });
+}
+
+export function useChannels() {
+  return useQuery({
+    queryKey: [api.channels.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.channels.list.path, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch channels");
+      const data = await res.json();
+      // Handle both array response and object with data array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      return data;
+    },
+  });
+}
+
+export function useActors() {
+  return useQuery({
+    queryKey: [api.actors.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.actors.list.path, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch actors");
+      const data = await res.json();
+      // Handle both array response and object with data array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      return data;
     },
   });
 }

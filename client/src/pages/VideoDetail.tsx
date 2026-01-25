@@ -833,7 +833,7 @@ export default function VideoDetail() {
           </div>
 
           {/* Channel Info */}
-          <div className="flex items-center gap-3 md:gap-4 mb-4 pb-4 border-b border-[#333]">
+          {/* <div className="flex items-center gap-3 md:gap-4 mb-4 pb-4 border-b border-[#333]">
             <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm md:text-base flex-shrink-0">
               {video.author[0]}
             </div>
@@ -844,10 +844,10 @@ export default function VideoDetail() {
             <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 md:px-6 text-xs md:text-sm h-8 md:h-10 whitespace-nowrap flex-shrink-0">
               <span className="hidden sm:inline">Subscribe </span>29.9K
             </Button>
-          </div>
+          </div> */}
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1.5 md:gap-2 mb-3 md:mb-4 overflow-x-auto scrollbar-hide pb-2">
+          {/* <div className="flex flex-wrap gap-1.5 md:gap-2 mb-3 md:mb-4 overflow-x-auto scrollbar-hide pb-2">
             {tags.map((tag, index) => (
               <button
                 key={index}
@@ -858,7 +858,7 @@ export default function VideoDetail() {
                 {tag === "Hardcore" && <ChevronDown className="h-3 w-3" />}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* Engagement Buttons */}
           <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6 pb-4 border-b border-[#333] overflow-x-auto scrollbar-hide">

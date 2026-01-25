@@ -11,10 +11,10 @@ function Router() {
   return (
     <WouterRouter>
       <Switch>
-        <Route path="/" component={Home} />
         <Route path="/video/:slug" component={VideoDetail} />
-        {/* Fallback to 404 */}
-        <Route component={NotFound} />
+        <Route path="/" component={Home} />
+        {/* Catch-all for Home - handles /, /page-X, and other home routes */}
+        <Route component={Home} />
       </Switch>
     </WouterRouter>
   );

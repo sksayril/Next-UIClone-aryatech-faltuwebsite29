@@ -8,24 +8,139 @@ import { Button } from "@/components/ui/button";
 import { Crown, ChevronRight } from "lucide-react";
 import { type VideoResponse } from "@shared/routes";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useRoute, useLocation } from "wouter";
 
 export default function Home() {
   const [activeVideoType, setActiveVideoType] = useState<'free'|'short'|'premium'|'photos'>('free');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [location, setLocation] = useLocation();
   
+  // Parse search query from URL
+  const searchParams = new URLSearchParams(location.split('?')[1] || '');
+  const searchQuery = searchParams.get('search') || undefined;
+  
+  // Get page number from URL - parse directly from location to support /page-X format
+  // Wouter doesn't support parameters after hyphens well, so we parse manually
+  let pageFromUrl = 1;
+  
+  // Check if URL matches /page-X format
+  if (location.startsWith('/page-')) {
+    // Parse /page-X format (e.g., /page-2 or /page-2?search=query)
+    const pageMatch = location.match(/^\/page-(\d+)(\?.*)?$/);
+    if (pageMatch && pageMatch[1]) {
+      const parsed = parseInt(pageMatch[1], 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        pageFromUrl = parsed;
+      }
+    }
+    // Also extract search query from URL if present
+    const urlSearchQuery = searchParams.get('search') || undefined;
+    if (urlSearchQuery && urlSearchQuery !== searchQuery) {
+      // Search query in URL will be handled by the searchQuery variable above
+    }
+  } else if (location === '/' || location.startsWith('/?')) {
+    // Home page - check for page in query params
+    const pageParam = searchParams.get('page');
+    if (pageParam) {
+      const parsed = parseInt(pageParam, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        pageFromUrl = parsed;
+      }
+    } else {
+      pageFromUrl = 1;
+    }
+  }
+  
+  // Ensure page is valid (at least 1, and is a number)
+  const currentPage = (pageFromUrl >= 1 && !isNaN(pageFromUrl) && isFinite(pageFromUrl)) ? pageFromUrl : 1;
+  
+  // Fetch videos without search parameter (frontend filtering)
   const { data: response, isLoading, isError } = useVideos({
     sort: 'popular',
     page: currentPage,
-    limit: 30,
+    limit: 100, // Fetch more videos for frontend filtering
     country: 'US' // US content
   });
   
   // Extract videos and pagination from response
   // Handle both old format (array) and new format (object with videos and pagination)
-  const videos = Array.isArray(response) ? response : (response?.videos || []);
+  const allVideos = Array.isArray(response) ? response : (response?.videos || []);
   const pagination = Array.isArray(response) ? null : (response?.pagination || null);
-  const totalPages = pagination?.pages || 1;
+  
+  // Frontend title-based filtering (only when search query exists)
+  const filteredVideos = searchQuery 
+    ? allVideos.filter((video: VideoResponse) => 
+        video.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allVideos;
+  
+  // Use API pagination when available, otherwise calculate from filtered results
+  let totalPages = 1;
+  let videos = filteredVideos;
+  
+  if (searchQuery) {
+    // When searching, paginate filtered results on frontend
+    const videosPerPage = 30;
+    const startIndex = (currentPage - 1) * videosPerPage;
+    const endIndex = startIndex + videosPerPage;
+    videos = filteredVideos.slice(startIndex, endIndex);
+    const totalFilteredVideos = filteredVideos.length;
+    totalPages = Math.ceil(totalFilteredVideos / videosPerPage) || 1;
+  } else {
+    // When not searching, use API pagination data directly
+    videos = allVideos;
+    
+    // Always use API pagination.pages if available (this is the source of truth)
+    if (pagination) {
+      // Priority 1: Use pagination.pages directly from API (e.g., 31)
+      if (typeof pagination.pages === 'number' && pagination.pages > 0) {
+        totalPages = pagination.pages;
+      } 
+      // Priority 2: Calculate from total and limit if pages not provided
+      else if (pagination.total && pagination.limit) {
+        totalPages = Math.ceil(pagination.total / pagination.limit) || 1;
+      } 
+      // Priority 3: Calculate from total using default limit
+      else if (pagination.total) {
+        const limit = 100; // Default limit used in API call
+        totalPages = Math.ceil(pagination.total / limit) || 1;
+      }
+    }
+  }
+  
+  // Debug: Log pagination info to verify API response is being used
+  if (pagination && !searchQuery) {
+    console.log('Pagination from API:', {
+      page: pagination.page,
+      pages: pagination.pages,
+      total: pagination.total,
+      limit: pagination.limit,
+      calculatedTotalPages: totalPages
+    });
+  }
+  
   const currentPageFromApi = pagination?.page || currentPage;
+  
+  // Function to update page and URL
+  const setCurrentPage = (page: number) => {
+    const validPage = Math.max(1, Math.min(page, totalPages || 1));
+    const searchParam = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+    if (validPage === 1) {
+      setLocation(`/${searchParam}`);
+    } else {
+      setLocation(`/page-${validPage}${searchParam}`);
+    }
+  };
+  
+  // Update URL if page from API doesn't match URL (redirect to correct page)
+  useEffect(() => {
+    if (pagination && pagination.page && pagination.page !== currentPage) {
+      if (pagination.page === 1) {
+        setLocation("/");
+      } else {
+        setLocation(`/page-${pagination.page}`);
+      }
+    }
+  }, [pagination, currentPage, setLocation]);
 
   const popularTags = ["Xnxx", "Xvideos", "Xxx", "Free Sex", "Mature Tube", "Stripchat", "Best Videos"];
 
@@ -54,9 +169,12 @@ export default function Home() {
         <main className="flex-1 min-w-0 px-3 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 max-w-full bg-[#222222]">
           
           {/* Main Content Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-8 gap-2 md:gap-4">
+          {/* Commented out: Porn Video Search title and results count */}
+          {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-8 gap-2 md:gap-4">
             <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl text-white font-bold">Porn Video Search</h1>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl text-white font-bold">
+                {searchQuery ? `Search Results for "${searchQuery}"` : 'Porn Video Search'}
+              </h1>
               {pagination && (
                 <span className="text-gray-400 text-sm md:text-base whitespace-nowrap">
                   {pagination.total >= 1000000 
@@ -67,7 +185,7 @@ export default function Home() {
                 </span>
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Video Type Filters */}
           <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pb-3 border-b border-[#333] overflow-x-auto scrollbar-hide">
@@ -91,7 +209,8 @@ export default function Home() {
             >
               Short videos
             </button>
-            <button
+            {/* Premium Videos button commented out */}
+            {/* <button
               onClick={() => setActiveVideoType('premium')}
               className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 flex items-center gap-1 whitespace-nowrap ${
                 activeVideoType === 'premium' 
@@ -101,7 +220,7 @@ export default function Home() {
             >
               <Crown className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
               Premium Videos
-            </button>
+            </button> */}
             <button
               onClick={() => setActiveVideoType('photos')}
               className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
@@ -158,7 +277,14 @@ export default function Home() {
             <>
               {videos.length === 0 ? (
                 <div className="text-center py-20 text-gray-500">
-                  No videos found.
+                  {searchQuery ? (
+                    <>
+                      <p className="text-lg mb-2">No videos found for "{searchQuery}"</p>
+                      <p className="text-sm">Try a different search term</p>
+                    </>
+                  ) : (
+                    <p>No videos found.</p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -232,7 +358,7 @@ export default function Home() {
                         {/* Next button */}
                         {currentPage < totalPages && (
                           <Button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            onClick={() => setCurrentPage(currentPage + 1)}
                             className="bg-primary hover:bg-primary/90 text-white border-0 ml-1 md:ml-2 px-3 md:px-4 text-xs md:text-sm h-8 md:h-9"
                           >
                             Next <ChevronRight className="h-3 w-3 md:h-4 md:w-4 ml-1" />

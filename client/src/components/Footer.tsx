@@ -15,7 +15,7 @@ export function Footer() {
           {/* xHamster Column */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-sm">xHamster</h3>
-            <ul className="space-y-2 text-sm">
+            {/* <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Press</a>
               </li>
@@ -31,13 +31,13 @@ export function Footer() {
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">xHamster Awards 2025</a>
               </li>
-            </ul>
+            </ul> */}
           </div>
 
           {/* Help Column */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-sm">Help</h3>
-            <ul className="space-y-2 text-sm">
+            {/* <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">FAQ</a>
               </li>
@@ -50,13 +50,13 @@ export function Footer() {
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Improve xHamster</a>
               </li>
-            </ul>
+            </ul> */}
           </div>
 
           {/* Legal Column */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-sm">Legal</h3>
-            <ul className="space-y-2 text-sm">
+            {/* <ul className="space-y-2 text-sm">
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms of use</a>
               </li>
@@ -78,13 +78,13 @@ export function Footer() {
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Trust and Safety</a>
               </li>
-            </ul>
+            </ul> */}
           </div>
 
           {/* Start making money with us Column */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-sm">Start making money with us</h3>
-            <ul className="space-y-2 text-sm mb-4">
+            {/* <ul className="space-y-2 text-sm mb-4">
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Camgirls Wanted</a>
               </li>
@@ -94,14 +94,13 @@ export function Footer() {
               <li>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">Content Creators Program</a>
               </li>
-            </ul>
-            <div className="mt-4">
+            </ul> */}
+            {/* <div className="mt-4">
               <h4 className="text-white font-semibold mb-2 text-sm">Monetize your content</h4>
               <Button className="bg-[#2a2a2a] hover:bg-[#333] text-white border-0 flex items-center gap-2">
                 <Play className="h-4 w-4 text-green-500" />
                 Become a creator
               </Button>
-              {/* Profile pictures placeholder */}
               <div className="flex -space-x-2 mt-3">
                 {[1, 2, 3, 4].map((i) => (
                   <div
@@ -110,13 +109,13 @@ export function Footer() {
                   />
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="border-t border-[#333] pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-wrap">
+          {/* <div className="flex items-center gap-4 flex-wrap">
             <span className="text-gray-500 text-xs">© 2007 - 2026, xHamster.com</span>
             <Button
               variant="ghost"
@@ -142,15 +141,15 @@ export function Footer() {
                 <Play className="h-4 w-4 text-white" />
               </a>
             </div>
-          </div>
+          </div> */}
           <div className="flex flex-col items-end gap-2">
             <span className="text-gray-500 text-xs text-right">
               18 U.S.C. 2257 Record-Keeping Requirements Compliance Statement
             </span>
-            <div className="bg-[#2a2a2a] px-3 py-1 rounded text-xs text-gray-400">
+            {/* <div className="bg-[#2a2a2a] px-3 py-1 rounded text-xs text-gray-400">
               RTA
               <div className="text-[10px] text-gray-500">RESTRICTED TO ADULTS</div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
