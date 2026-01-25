@@ -29,9 +29,17 @@ export default function VideoDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [showPreRollAd, setShowPreRollAd] = useState(false);
+  const [showInVideoAd, setShowInVideoAd] = useState(false);
+  const [preRollAdShown, setPreRollAdShown] = useState(false);
+  const [midRollAdShown, setMidRollAdShown] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(5);
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbnailVideoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const preRollAdRef = useRef<HTMLDivElement>(null);
+  const inVideoAdRef = useRef<HTMLDivElement>(null);
+  const adCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
   
@@ -97,11 +105,71 @@ export default function VideoDetail() {
     setThumbnailVideoPlaying(false);
     setIsVideoLoading(false);
     setIsPlaying(false);
+    setShowPreRollAd(false);
+    setShowInVideoAd(false);
+    setPreRollAdShown(false);
+    setMidRollAdShown(false);
+    setAdCountdown(5);
+    // Clear ad countdown interval
+    if (adCountdownIntervalRef.current) {
+      clearInterval(adCountdownIntervalRef.current);
+      adCountdownIntervalRef.current = null;
+    }
     // Reset thumbnail error when video changes, but check if thumbnail exists
     if (video) {
       setThumbnailError(!video.thumbnail || video.thumbnail.trim() === '');
     }
   }, [currentVideoUrl, video]);
+
+  // Initialize JuicyAds when component mounts or ad containers are ready
+  useEffect(() => {
+    const initJuicyAds = () => {
+      // Initialize adsbyjuicy if not already initialized
+      if (typeof window !== 'undefined') {
+        (window as any).adsbyjuicy = (window as any).adsbyjuicy || [];
+      }
+
+      // Pre-roll ad
+      if (preRollAdRef.current && showPreRollAd && !preRollAdRef.current.querySelector('ins')) {
+        const preRollIns = document.createElement('ins');
+        preRollIns.id = '1109932-preroll';
+        preRollIns.setAttribute('data-width', '308');
+        preRollIns.setAttribute('data-height', '286');
+        preRollAdRef.current.innerHTML = '';
+        preRollAdRef.current.appendChild(preRollIns);
+        (window as any).adsbyjuicy.push({ adzone: 1109932 });
+      }
+      
+      // In-video ad
+      if (inVideoAdRef.current && showInVideoAd && !inVideoAdRef.current.querySelector('ins')) {
+        const inVideoIns = document.createElement('ins');
+        inVideoIns.id = '1109932-invideo';
+        inVideoIns.setAttribute('data-width', '308');
+        inVideoIns.setAttribute('data-height', '286');
+        inVideoAdRef.current.innerHTML = '';
+        inVideoAdRef.current.appendChild(inVideoIns);
+        (window as any).adsbyjuicy.push({ adzone: 1109932 });
+      }
+    };
+
+    // Try to initialize when ad containers are shown
+    if (showPreRollAd || showInVideoAd) {
+      initJuicyAds();
+      // Also try after a delay to ensure script is loaded
+      const timeout = setTimeout(initJuicyAds, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [showPreRollAd, showInVideoAd]);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (adCountdownIntervalRef.current) {
+        clearInterval(adCountdownIntervalRef.current);
+        adCountdownIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Update video source when quality changes
   useEffect(() => {
@@ -226,41 +294,110 @@ export default function VideoDetail() {
         setIsPlaying(false);
         setIsVideoLoading(false);
         setShowControls(true); // Always show controls when paused
+        setShowInVideoAd(false); // Hide invideo ad when paused
       } else {
-        // Show loading state when starting to play
-        setIsVideoLoading(true);
-        setShowControls(true);
-        
-        // Ensure video is loaded and ready
-        if (videoRef.current.readyState < 2) {
-          videoRef.current.load();
-        }
-        
-        // Play the video
-        const playPromise = videoRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              // Video started playing successfully
-              setIsPlaying(true);
-              setIsVideoLoading(false);
-              setVideoError(false);
-            })
-            .catch((error) => {
-              console.error('Failed to play video:', error);
-              setVideoError(true);
-              setIsPlaying(false);
-              setIsVideoLoading(false);
+        // If pre-roll ad hasn't been shown, show it first
+        if (!preRollAdShown) {
+          setShowPreRollAd(true);
+          setPreRollAdShown(true);
+          setAdCountdown(5);
+          
+          // Clear any existing interval
+          if (adCountdownIntervalRef.current) {
+            clearInterval(adCountdownIntervalRef.current);
+          }
+          
+          // Countdown timer
+          adCountdownIntervalRef.current = setInterval(() => {
+            setAdCountdown((prev) => {
+              if (prev <= 1) {
+                if (adCountdownIntervalRef.current) {
+                  clearInterval(adCountdownIntervalRef.current);
+                  adCountdownIntervalRef.current = null;
+                }
+                setShowPreRollAd(false);
+                startVideoPlayback();
+                return 0;
+              }
+              return prev - 1;
             });
+          }, 1000);
+        } else {
+          startVideoPlayback();
         }
+      }
+    }
+  };
+
+  const startVideoPlayback = () => {
+    if (videoRef.current && !videoError && currentVideoUrl) {
+      // Show loading state when starting to play
+      setIsVideoLoading(true);
+      setShowControls(true);
+      
+      // Ensure video is loaded and ready
+      if (videoRef.current.readyState < 2) {
+        videoRef.current.load();
+      }
+      
+      // Play the video
+      const playPromise = videoRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Video started playing successfully
+            setIsPlaying(true);
+            setIsVideoLoading(false);
+            setVideoError(false);
+          })
+          .catch((error) => {
+            console.error('Failed to play video:', error);
+            setVideoError(true);
+            setIsPlaying(false);
+            setIsVideoLoading(false);
+          });
       }
     }
   };
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
+      const currentTime = videoRef.current.currentTime;
+      setCurrentTime(currentTime);
+      
+      // Show mid-roll ad at 25% of video duration (if not already shown)
+      if (duration > 0 && !midRollAdShown && currentTime >= duration * 0.25 && isPlaying) {
+        setMidRollAdShown(true);
+        setShowInVideoAd(true);
+        setAdCountdown(5);
+        videoRef.current.pause();
+        
+        // Clear any existing interval
+        if (adCountdownIntervalRef.current) {
+          clearInterval(adCountdownIntervalRef.current);
+        }
+        
+        // Countdown timer
+        adCountdownIntervalRef.current = setInterval(() => {
+          setAdCountdown((prev) => {
+            if (prev <= 1) {
+              if (adCountdownIntervalRef.current) {
+                clearInterval(adCountdownIntervalRef.current);
+                adCountdownIntervalRef.current = null;
+              }
+              setShowInVideoAd(false);
+              if (videoRef.current) {
+                videoRef.current.play().catch(() => {
+                  setIsPlaying(false);
+                });
+              }
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
     }
   };
 
@@ -556,8 +693,84 @@ export default function VideoDetail() {
               </div>
             )}
             
+            {/* Pre-Roll Ad Overlay - Show before video plays */}
+            {showPreRollAd && (
+              <div 
+                className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center"
+                style={{ 
+                  zIndex: 60,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0
+                }}
+              >
+                <div className="flex flex-col items-center gap-4 relative w-full h-full">
+                  <div ref={preRollAdRef} className="flex justify-center items-center mt-auto mb-auto"></div>
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
+                    <p className="text-white text-sm md:text-base font-medium">Ad will close in {adCountdown} seconds...</p>
+                    <button
+                      onClick={() => {
+                        if (adCountdownIntervalRef.current) {
+                          clearInterval(adCountdownIntervalRef.current);
+                          adCountdownIntervalRef.current = null;
+                        }
+                        setShowPreRollAd(false);
+                        setAdCountdown(0);
+                        startVideoPlayback();
+                      }}
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded transition-colors text-sm md:text-base"
+                    >
+                      Skip Ad
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* In-Video Ad Overlay - Show during video playback */}
+            {showInVideoAd && (
+              <div 
+                className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center"
+                style={{ 
+                  zIndex: 60,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0
+                }}
+              >
+                <div className="flex flex-col items-center gap-4 relative w-full h-full">
+                  <div ref={inVideoAdRef} className="flex justify-center items-center mt-auto mb-auto"></div>
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
+                    <p className="text-white text-sm md:text-base font-medium">Ad will close in {adCountdown} seconds...</p>
+                    <button
+                      onClick={() => {
+                        if (adCountdownIntervalRef.current) {
+                          clearInterval(adCountdownIntervalRef.current);
+                          adCountdownIntervalRef.current = null;
+                        }
+                        setShowInVideoAd(false);
+                        setAdCountdown(0);
+                        if (videoRef.current) {
+                          videoRef.current.play().catch(() => {
+                            setIsPlaying(false);
+                          });
+                        }
+                      }}
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded transition-colors text-sm md:text-base"
+                    >
+                      Skip Ad
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Video Loading Indicator - Show when video is loading */}
-            {isVideoLoading && currentVideoUrl && !videoError && (
+            {isVideoLoading && currentVideoUrl && !videoError && !showPreRollAd && !showInVideoAd && (
               <div 
                 className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center"
                 style={{ 
