@@ -194,9 +194,7 @@
     <script type="text/javascript" data-id="juicyads-native-ads" data-ad-zone="1109931" data-targets="a" src="https://js.juicyads.com/juicyads.native-ads.min.js"></script>
     
     <!-- JuicyAds v3.0 -->
-    <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-    <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1109932});</script>
-    <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1109936});</script>
+    <script type="text/javascript" data-cfasync="false" src="https://poweredby.jads.co/js/jads.js"></script>
     <!--JuicyAds END-->
     
     <!-- Start JuicyAds Float Ad -->
@@ -215,5 +213,90 @@
     <ins id="1109936" data-width="774" data-height="290"></ins>
     
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Initialize JuicyAds after DOM is ready -->
+    <script type="text/javascript">
+      (function() {
+        function initJuicyAds() {
+          if (typeof window.adsbyjuicy !== 'undefined') {
+            window.adsbyjuicy = window.adsbyjuicy || [];
+            window.adsbyjuicy.push({'adzone':1109932});
+            window.adsbyjuicy.push({'adzone':1109936});
+          } else {
+            // Retry if jads.js hasn't loaded yet
+            setTimeout(initJuicyAds, 100);
+          }
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initJuicyAds);
+        } else {
+          initJuicyAds();
+        }
+      })();
+    </script>
+    
+    <!-- Hide ad error messages and handle ad loading errors -->
+    <style>
+      /* Hide JuicyAds error messages */
+      ins[id^="110993"] iframe[src*="error"],
+      ins[id^="110993"] div[style*="error"],
+      ins[id^="110993"] div[style*="unavailable"],
+      ins[id^="110993"] div[style*="invalid"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+      }
+      
+      /* Hide empty ad containers */
+      ins[id^="110993"]:empty {
+        display: none !important;
+      }
+      
+      /* Hide ad containers with error styling */
+      ins[id^="110993"] div {
+        max-width: 100%;
+      }
+    </style>
+    
+    <!-- Script to hide ad errors dynamically -->
+    <script type="text/javascript">
+      (function() {
+        function hideAdErrors() {
+          // Hide ad containers that contain error messages
+          const adContainers = document.querySelectorAll('ins[id^="110993"]');
+          adContainers.forEach(function(container) {
+            const text = container.textContent || container.innerText || '';
+            if (text.includes('temporarily unavailable') || 
+                text.includes('invalid') || 
+                text.includes('This advertisement')) {
+              container.style.display = 'none';
+              container.style.visibility = 'hidden';
+              container.style.height = '0';
+              container.style.width = '0';
+              container.style.overflow = 'hidden';
+            }
+          });
+        }
+        
+        // Run immediately and on intervals to catch dynamically loaded errors
+        hideAdErrors();
+        setTimeout(hideAdErrors, 1000);
+        setTimeout(hideAdErrors, 3000);
+        setTimeout(hideAdErrors, 5000);
+        
+        // Also observe for changes
+        if (window.MutationObserver) {
+          const observer = new MutationObserver(hideAdErrors);
+          const adZones = document.querySelectorAll('ins[id^="110993"]');
+          adZones.forEach(function(zone) {
+            observer.observe(zone, { childList: true, subtree: true });
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
