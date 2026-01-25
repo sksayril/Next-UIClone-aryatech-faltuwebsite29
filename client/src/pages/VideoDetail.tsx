@@ -305,8 +305,13 @@ export default function VideoDetail() {
     // Function to initialize ads
     const initAds = () => {
       try {
-        // Ensure adsbyjuicy array exists
-        if (!(window as any).adsbyjuicy) {
+        // Ensure adsbyjuicy array exists - initialize it if it doesn't
+        if (typeof (window as any).adsbyjuicy === 'undefined') {
+          (window as any).adsbyjuicy = [];
+        }
+
+        // Make sure it's an array
+        if (!Array.isArray((window as any).adsbyjuicy)) {
           (window as any).adsbyjuicy = [];
         }
 
