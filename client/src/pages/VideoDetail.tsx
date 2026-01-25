@@ -295,98 +295,71 @@ export default function VideoDetail() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Load JuicyAds script
+  // Initialize JuicyAds when component mounts and video is loaded
   useEffect(() => {
     // Only run in browser
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !video) {
       return;
     }
 
-    try {
-      // Check if script is already loaded
-      if (document.querySelector('script[src="https://poweredby.jads.co/js/jads.js"]')) {
-        // Script already loaded, just initialize ads
-        if ((window as any).adsbyjuicy && Array.isArray((window as any).adsbyjuicy)) {
+    // Function to initialize ads
+    const initAds = () => {
+      try {
+        // Ensure adsbyjuicy array exists
+        if (!(window as any).adsbyjuicy) {
+          (window as any).adsbyjuicy = [];
+        }
+
+        // Check if ad containers exist in DOM
+        const ad1 = document.getElementById('1109935');
+        const ad2 = document.getElementById('1109935-top');
+        
+        // Initialize each ad container separately
+        if (ad1) {
           (window as any).adsbyjuicy.push({'adzone': 1109935});
         }
-        return;
-      }
-
-      // Load JuicyAds script
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.setAttribute('data-cfasync', 'false');
-      script.async = true;
-      script.src = 'https://poweredby.jads.co/js/jads.js';
-      
-      // Initialize ads after script loads
-      script.onload = () => {
-        try {
-          if (typeof window !== 'undefined') {
-            const adsbyjuicy = (window as any).adsbyjuicy || [];
-            (window as any).adsbyjuicy = adsbyjuicy;
-            // Initialize ad zone
-            adsbyjuicy.push({'adzone': 1109935});
-          }
-        } catch (error) {
-          console.error('Error initializing JuicyAds:', error);
+        if (ad2) {
+          (window as any).adsbyjuicy.push({'adzone': 1109935});
         }
-      };
-      
-      script.onerror = () => {
-        console.error('Failed to load JuicyAds script');
-      };
-      
-      if (document.head) {
-        document.head.appendChild(script);
+      } catch (err) {
+        console.error('Error initializing ads:', err);
       }
-    } catch (error) {
-      console.error('Error setting up JuicyAds:', error);
-    }
-  }, []);
+    };
 
-  // Initialize ads when component mounts and video is loaded
-  useEffect(() => {
-    // Only run in browser
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      return;
-    }
+    // Wait for script to load and DOM to be ready
+    const checkAndInit = () => {
+      // Check if JuicyAds script is loaded (adsbyjuicy should be defined)
+      if (typeof (window as any).adsbyjuicy !== 'undefined') {
+        initAds();
+        return true;
+      }
+      return false;
+    };
 
-    if (video) {
-      try {
-        // Wait for DOM to be ready and script to load
-        const initAds = () => {
-          try {
-            if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-              if ((window as any).adsbyjuicy && Array.isArray((window as any).adsbyjuicy)) {
-                // Initialize both ad containers
-                const ad1 = document.getElementById('1109935');
-                const ad2 = document.getElementById('1109935-top');
-                
-                if (ad1 || ad2) {
-                  (window as any).adsbyjuicy.push({'adzone': 1109935});
-                }
-              }
+    // Try multiple times with increasing delays
+    const timeouts: NodeJS.Timeout[] = [];
+    
+    // Try immediately
+    if (!checkAndInit()) {
+      timeouts.push(setTimeout(() => {
+        if (!checkAndInit()) {
+          timeouts.push(setTimeout(() => {
+            if (!checkAndInit()) {
+              timeouts.push(setTimeout(() => {
+                checkAndInit();
+              }, 2000));
             }
-          } catch (err) {
-            // Silently fail if ads can't be initialized
-          }
-        };
-        
-        // Try after delays to ensure script is loaded
-        const timeout1 = setTimeout(initAds, 500);
-        const timeout2 = setTimeout(initAds, 1500);
-        const timeout3 = setTimeout(initAds, 3000);
-        
-        return () => {
-          clearTimeout(timeout1);
-          clearTimeout(timeout2);
-          clearTimeout(timeout3);
-        };
-      } catch (error) {
-        // Silently fail
-      }
+          }, 1500));
+        }
+      }, 500));
+    } else {
+      // If initialized immediately, also try again after a delay to ensure both ads load
+      timeouts.push(setTimeout(initAds, 1000));
     }
+    
+    return () => {
+      timeouts.forEach(timeout => clearTimeout(timeout));
+    };
   }, [video]);
 
   // Update document title with video title
