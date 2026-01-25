@@ -295,6 +295,100 @@ export default function VideoDetail() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Load JuicyAds script
+  useEffect(() => {
+    // Only run in browser
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    try {
+      // Check if script is already loaded
+      if (document.querySelector('script[src="https://poweredby.jads.co/js/jads.js"]')) {
+        // Script already loaded, just initialize ads
+        if ((window as any).adsbyjuicy && Array.isArray((window as any).adsbyjuicy)) {
+          (window as any).adsbyjuicy.push({'adzone': 1109935});
+        }
+        return;
+      }
+
+      // Load JuicyAds script
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.setAttribute('data-cfasync', 'false');
+      script.async = true;
+      script.src = 'https://poweredby.jads.co/js/jads.js';
+      
+      // Initialize ads after script loads
+      script.onload = () => {
+        try {
+          if (typeof window !== 'undefined') {
+            const adsbyjuicy = (window as any).adsbyjuicy || [];
+            (window as any).adsbyjuicy = adsbyjuicy;
+            // Initialize ad zone
+            adsbyjuicy.push({'adzone': 1109935});
+          }
+        } catch (error) {
+          console.error('Error initializing JuicyAds:', error);
+        }
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load JuicyAds script');
+      };
+      
+      if (document.head) {
+        document.head.appendChild(script);
+      }
+    } catch (error) {
+      console.error('Error setting up JuicyAds:', error);
+    }
+  }, []);
+
+  // Initialize ads when component mounts and video is loaded
+  useEffect(() => {
+    // Only run in browser
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    if (video) {
+      try {
+        // Wait for DOM to be ready and script to load
+        const initAds = () => {
+          try {
+            if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+              if ((window as any).adsbyjuicy && Array.isArray((window as any).adsbyjuicy)) {
+                // Initialize both ad containers
+                const ad1 = document.getElementById('1109935');
+                const ad2 = document.getElementById('1109935-top');
+                
+                if (ad1 || ad2) {
+                  (window as any).adsbyjuicy.push({'adzone': 1109935});
+                }
+              }
+            }
+          } catch (err) {
+            // Silently fail if ads can't be initialized
+          }
+        };
+        
+        // Try after delays to ensure script is loaded
+        const timeout1 = setTimeout(initAds, 500);
+        const timeout2 = setTimeout(initAds, 1500);
+        const timeout3 = setTimeout(initAds, 3000);
+        
+        return () => {
+          clearTimeout(timeout1);
+          clearTimeout(timeout2);
+          clearTimeout(timeout3);
+        };
+      } catch (error) {
+        // Silently fail
+      }
+    }
+  }, [video]);
+
   // Update document title with video title
   useDocumentTitle(
     video ? `${video.title} - xHamster` : "xHamster - Free Porn Videos",
@@ -324,15 +418,15 @@ export default function VideoDetail() {
         <div className="flex-1 min-w-0">
           {/* Video Player Section */}
           <div className="mb-6">
-          {/* WATCH MORE Banner */}
-          <div className="bg-yellow-500 text-black text-xs md:text-sm font-semibold px-3 md:px-4 py-2 mb-2 flex items-center justify-between rounded-t">
+          {/* WATCH MORE Banner - Removed */}
+          {/* <div className="bg-yellow-500 text-black text-xs md:text-sm font-semibold px-3 md:px-4 py-2 mb-2 flex items-center justify-between rounded-t">
             <div className="flex items-center gap-1 md:gap-2 flex-wrap">
               <span className="whitespace-nowrap">WATCH MORE</span>
               <span className="hidden sm:inline">Join me on FapHouse and watch Full videos</span>
               <span className="sm:hidden">Full videos</span>
               <Info className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
             </div>
-          </div>
+          </div> */}
 
           {/* Video Player */}
           <div 
@@ -807,12 +901,28 @@ export default function VideoDetail() {
             </div>
             )}
           </div>
+          
+          {/* JuicyAds v3.0 - After Video Player */}
+          {video && (
+            <div className="mb-4 md:mb-6 flex justify-center" id="juicyads-after-player">
+              <ins id="1109935" data-width="300" data-height="100"></ins>
+            </div>
+          )}
         </div>
 
         {/* Video Info Section */}
         <div className="mb-4 md:mb-6">
+          {/* JuicyAds v3.0 - Above Title */}
+          {video && (
+            <div className="mb-3 md:mb-4 flex justify-center" id="juicyads-above-title">
+              <ins id="1109935-top" data-width="300" data-height="100"></ins>
+            </div>
+          )}
+          
           {/* Title and Stats */}
-          <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 md:mb-3 leading-tight">{video.title}</h1>
+          {video && (
+            <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 md:mb-3 leading-tight">{video.title}</h1>
+          )}
           
           <div className="flex items-center justify-between mb-3 md:mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-400">
