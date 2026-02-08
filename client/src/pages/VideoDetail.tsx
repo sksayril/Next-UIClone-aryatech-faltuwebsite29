@@ -29,17 +29,9 @@ export default function VideoDetail() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
-  const [showPreRollAd, setShowPreRollAd] = useState(false);
-  const [showInVideoAd, setShowInVideoAd] = useState(false);
-  const [preRollAdShown, setPreRollAdShown] = useState(false);
-  const [midRollAdShown, setMidRollAdShown] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(5);
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbnailVideoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const preRollAdRef = useRef<HTMLDivElement>(null);
-  const inVideoAdRef = useRef<HTMLDivElement>(null);
-  const adCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { data: video, isLoading, isError } = useVideoBySlug(slug);
   
@@ -105,71 +97,12 @@ export default function VideoDetail() {
     setThumbnailVideoPlaying(false);
     setIsVideoLoading(false);
     setIsPlaying(false);
-    setShowPreRollAd(false);
-    setShowInVideoAd(false);
-    setPreRollAdShown(false);
-    setMidRollAdShown(false);
-    setAdCountdown(5);
-    // Clear ad countdown interval
-    if (adCountdownIntervalRef.current) {
-      clearInterval(adCountdownIntervalRef.current);
-      adCountdownIntervalRef.current = null;
-    }
     // Reset thumbnail error when video changes, but check if thumbnail exists
     if (video) {
       setThumbnailError(!video.thumbnail || video.thumbnail.trim() === '');
     }
   }, [currentVideoUrl, video]);
 
-  // Initialize JuicyAds when component mounts or ad containers are ready
-  useEffect(() => {
-    const initJuicyAds = () => {
-      // Initialize adsbyjuicy if not already initialized
-      if (typeof window !== 'undefined') {
-        (window as any).adsbyjuicy = (window as any).adsbyjuicy || [];
-      }
-
-      // Pre-roll ad
-      if (preRollAdRef.current && showPreRollAd && !preRollAdRef.current.querySelector('ins')) {
-        const preRollIns = document.createElement('ins');
-        preRollIns.id = '1109932-preroll';
-        preRollIns.setAttribute('data-width', '308');
-        preRollIns.setAttribute('data-height', '286');
-        preRollAdRef.current.innerHTML = '';
-        preRollAdRef.current.appendChild(preRollIns);
-        (window as any).adsbyjuicy.push({ adzone: 1109932 });
-      }
-      
-      // In-video ad
-      if (inVideoAdRef.current && showInVideoAd && !inVideoAdRef.current.querySelector('ins')) {
-        const inVideoIns = document.createElement('ins');
-        inVideoIns.id = '1109932-invideo';
-        inVideoIns.setAttribute('data-width', '308');
-        inVideoIns.setAttribute('data-height', '286');
-        inVideoAdRef.current.innerHTML = '';
-        inVideoAdRef.current.appendChild(inVideoIns);
-        (window as any).adsbyjuicy.push({ adzone: 1109932 });
-      }
-    };
-
-    // Try to initialize when ad containers are shown
-    if (showPreRollAd || showInVideoAd) {
-      initJuicyAds();
-      // Also try after a delay to ensure script is loaded
-      const timeout = setTimeout(initJuicyAds, 500);
-      return () => clearTimeout(timeout);
-    }
-  }, [showPreRollAd, showInVideoAd]);
-
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (adCountdownIntervalRef.current) {
-        clearInterval(adCountdownIntervalRef.current);
-        adCountdownIntervalRef.current = null;
-      }
-    };
-  }, []);
 
   // Update video source when quality changes
   useEffect(() => {
@@ -294,37 +227,8 @@ export default function VideoDetail() {
         setIsPlaying(false);
         setIsVideoLoading(false);
         setShowControls(true); // Always show controls when paused
-        setShowInVideoAd(false); // Hide invideo ad when paused
       } else {
-        // If pre-roll ad hasn't been shown, show it first
-        if (!preRollAdShown) {
-          setShowPreRollAd(true);
-          setPreRollAdShown(true);
-          setAdCountdown(5);
-          
-          // Clear any existing interval
-          if (adCountdownIntervalRef.current) {
-            clearInterval(adCountdownIntervalRef.current);
-          }
-          
-          // Countdown timer
-          adCountdownIntervalRef.current = setInterval(() => {
-            setAdCountdown((prev) => {
-              if (prev <= 1) {
-                if (adCountdownIntervalRef.current) {
-                  clearInterval(adCountdownIntervalRef.current);
-                  adCountdownIntervalRef.current = null;
-                }
-                setShowPreRollAd(false);
-                startVideoPlayback();
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        } else {
-          startVideoPlayback();
-        }
+        startVideoPlayback();
       }
     }
   };
@@ -365,39 +269,6 @@ export default function VideoDetail() {
     if (videoRef.current) {
       const currentTime = videoRef.current.currentTime;
       setCurrentTime(currentTime);
-      
-      // Show mid-roll ad at 25% of video duration (if not already shown)
-      if (duration > 0 && !midRollAdShown && currentTime >= duration * 0.25 && isPlaying) {
-        setMidRollAdShown(true);
-        setShowInVideoAd(true);
-        setAdCountdown(5);
-        videoRef.current.pause();
-        
-        // Clear any existing interval
-        if (adCountdownIntervalRef.current) {
-          clearInterval(adCountdownIntervalRef.current);
-        }
-        
-        // Countdown timer
-        adCountdownIntervalRef.current = setInterval(() => {
-          setAdCountdown((prev) => {
-            if (prev <= 1) {
-              if (adCountdownIntervalRef.current) {
-                clearInterval(adCountdownIntervalRef.current);
-                adCountdownIntervalRef.current = null;
-              }
-              setShowInVideoAd(false);
-              if (videoRef.current) {
-                videoRef.current.play().catch(() => {
-                  setIsPlaying(false);
-                });
-              }
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }
     }
   };
 
@@ -432,8 +303,6 @@ export default function VideoDetail() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Ad script is loaded globally in index.html
-  // The script will automatically populate divs with id="b3a4498413dba25bcd98e67937ca5a54"
 
   // Update document title with video title
   useDocumentTitle(
@@ -464,7 +333,7 @@ export default function VideoDetail() {
         <div className="flex-1 min-w-0">
           {/* Video Player Section */}
           <div className="mb-6">
-          {/* WATCH MORE Banner - Removed */}
+          {/* WATCH MORE Banner */}
           {/* <div className="bg-yellow-500 text-black text-xs md:text-sm font-semibold px-3 md:px-4 py-2 mb-2 flex items-center justify-between rounded-t">
             <div className="flex items-center gap-1 md:gap-2 flex-wrap">
               <span className="whitespace-nowrap">WATCH MORE</span>
@@ -474,9 +343,9 @@ export default function VideoDetail() {
             </div>
           </div> */}
 
-          {/* Ad Above Video Player */}
+          {/* Banner Ad Above Video Player */}
           {video && (
-            <div className="mb-4 md:mb-6 flex justify-center" id="ad-above-player">
+            <div className="mb-4 md:mb-6 flex justify-center">
               <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
             </div>
           )}
@@ -484,7 +353,7 @@ export default function VideoDetail() {
           {/* Video Player */}
           <div 
             className="bg-black aspect-video w-full rounded-lg overflow-visible shadow-2xl border border-[#333] relative group" 
-            style={{ position: 'relative', minHeight: '400px' }}
+            style={{ position: 'relative', aspectRatio: '16 / 9' }}
             onMouseEnter={() => {
               setIsHoveringPlayer(true);
               setShowControls(true);
@@ -693,84 +562,8 @@ export default function VideoDetail() {
               </div>
             )}
             
-            {/* Pre-Roll Ad Overlay - Show before video plays */}
-            {showPreRollAd && (
-              <div 
-                className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center"
-                style={{ 
-                  zIndex: 60,
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0
-                }}
-              >
-                <div className="flex flex-col items-center gap-4 relative w-full h-full">
-                  <div ref={preRollAdRef} className="flex justify-center items-center mt-auto mb-auto"></div>
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
-                    <p className="text-white text-sm md:text-base font-medium">Ad will close in {adCountdown} seconds...</p>
-                    <button
-                      onClick={() => {
-                        if (adCountdownIntervalRef.current) {
-                          clearInterval(adCountdownIntervalRef.current);
-                          adCountdownIntervalRef.current = null;
-                        }
-                        setShowPreRollAd(false);
-                        setAdCountdown(0);
-                        startVideoPlayback();
-                      }}
-                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded transition-colors text-sm md:text-base"
-                    >
-                      Skip Ad
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* In-Video Ad Overlay - Show during video playback */}
-            {showInVideoAd && (
-              <div 
-                className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center"
-                style={{ 
-                  zIndex: 60,
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0
-                }}
-              >
-                <div className="flex flex-col items-center gap-4 relative w-full h-full">
-                  <div ref={inVideoAdRef} className="flex justify-center items-center mt-auto mb-auto"></div>
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
-                    <p className="text-white text-sm md:text-base font-medium">Ad will close in {adCountdown} seconds...</p>
-                    <button
-                      onClick={() => {
-                        if (adCountdownIntervalRef.current) {
-                          clearInterval(adCountdownIntervalRef.current);
-                          adCountdownIntervalRef.current = null;
-                        }
-                        setShowInVideoAd(false);
-                        setAdCountdown(0);
-                        if (videoRef.current) {
-                          videoRef.current.play().catch(() => {
-                            setIsPlaying(false);
-                          });
-                        }
-                      }}
-                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded transition-colors text-sm md:text-base"
-                    >
-                      Skip Ad
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Video Loading Indicator - Show when video is loading */}
-            {isVideoLoading && currentVideoUrl && !videoError && !showPreRollAd && !showInVideoAd && (
+            {isVideoLoading && currentVideoUrl && !videoError && (
               <div 
                 className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center"
                 style={{ 
@@ -1035,13 +828,6 @@ export default function VideoDetail() {
 
         {/* Video Info Section */}
         <div className="mb-4 md:mb-6">
-          {/* Ad Above Title */}
-          {video && (
-            <div className="mb-3 md:mb-4 flex justify-center" id="ad-above-title">
-              <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
-            </div>
-          )}
-          
           {/* Title and Stats */}
           {video && (
             <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 md:mb-3 leading-tight">{video.title}</h1>
@@ -1174,11 +960,6 @@ export default function VideoDetail() {
               >
                 Recommended
               </button>
-            </div>
-            <div className="text-[10px] md:text-xs text-gray-500 flex items-center gap-1">
-              <span className="hidden sm:inline">By clicking the content here you will also see an ad</span>
-              <span className="sm:hidden">Click content = ad</span>
-              <Info className="h-3 w-3 flex-shrink-0" />
             </div>
           </div>
 

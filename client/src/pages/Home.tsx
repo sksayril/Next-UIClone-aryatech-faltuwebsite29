@@ -246,9 +246,13 @@ export default function Home() {
           </div>
 
           {/* Ad Disclaimer */}
-          <div className="flex items-center gap-2 mb-10 text-xs text-gray-500">
-            <span>By clicking the content you will also see an ad.</span>
-            <button className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-[10px]">AD</button>
+          <div className="flex flex-col items-center gap-3 mb-10">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>By clicking the content you will also see an ad.</span>
+              <button className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-[10px]">AD</button>
+            </div>
+            {/* Banner Ad */}
+            <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
           </div>
 
           {/* Videos Grid */}
