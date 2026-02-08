@@ -57,7 +57,7 @@ export default function Home() {
   const { data: response, isLoading, isError } = useVideos({
     sort: 'popular',
     page: currentPage,
-    limit: 100, // Fetch more videos for frontend filtering
+    limit: 50,
     country: 'US' // US content
   });
   
@@ -79,7 +79,7 @@ export default function Home() {
   
   if (searchQuery) {
     // When searching, paginate filtered results on frontend
-    const videosPerPage = 30;
+    const videosPerPage = 50;
     const startIndex = (currentPage - 1) * videosPerPage;
     const endIndex = startIndex + videosPerPage;
     videos = filteredVideos.slice(startIndex, endIndex);
@@ -101,7 +101,7 @@ export default function Home() {
       } 
       // Priority 3: Calculate from total using default limit
       else if (pagination.total) {
-        const limit = 100; // Default limit used in API call
+        const limit = 50; // Default limit used in API call
         totalPages = Math.ceil(pagination.total / limit) || 1;
       }
     }
@@ -153,6 +153,42 @@ export default function Home() {
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
+  // Initialize banner ads when component mounts
+  useEffect(() => {
+    const initAds = () => {
+      const adContainer = document.getElementById('b3a4498413dba25bcd98e67937ca5a54');
+      if (adContainer && !adContainer.querySelector('iframe')) {
+        // Ensure atOptions is set
+        if (typeof (window as any).atOptions === 'undefined') {
+          (window as any).atOptions = {
+            'key': 'b3a4498413dba25bcd98e67937ca5a54',
+            'format': 'iframe',
+            'height': 50,
+            'width': 320,
+            'params': {}
+          };
+        }
+        
+        // Load the ad script if not already loaded
+        if (!document.querySelector('script[src*="b3a4498413dba25bcd98e67937ca5a54"]')) {
+          const script = document.createElement('script');
+          script.src = 'https://exasperatebubblyorthodox.com/b3a4498413dba25bcd98e67937ca5a54/invoke.js';
+          script.async = true;
+          document.body.appendChild(script);
+        }
+      }
+    };
+
+    // Try after a delay to ensure DOM is ready
+    const timeout = setTimeout(initAds, 100);
+    const timeout2 = setTimeout(initAds, 1000);
+    
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(timeout2);
+    };
   }, []);
 
   return (
