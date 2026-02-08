@@ -2,6 +2,7 @@ import { useVideoBySlug, useVideos } from "@/hooks/use-videos";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { VideoCard } from "@/components/VideoCard";
+import AdBanner from "@/components/AdBanner";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { useRoute } from "wouter";
@@ -103,43 +104,6 @@ export default function VideoDetail() {
     }
   }, [currentVideoUrl, video]);
 
-  // Initialize banner ads when component mounts or video loads
-  useEffect(() => {
-    if (!video) return;
-    
-    const initAds = () => {
-      const adContainer = document.getElementById('b3a4498413dba25bcd98e67937ca5a54');
-      if (adContainer && !adContainer.querySelector('iframe')) {
-        // Ensure atOptions is set
-        if (typeof (window as any).atOptions === 'undefined') {
-          (window as any).atOptions = {
-            'key': 'b3a4498413dba25bcd98e67937ca5a54',
-            'format': 'iframe',
-            'height': 50,
-            'width': 320,
-            'params': {}
-          };
-        }
-        
-        // Load the ad script if not already loaded
-        if (!document.querySelector('script[src*="b3a4498413dba25bcd98e67937ca5a54"]')) {
-          const script = document.createElement('script');
-          script.src = 'https://exasperatebubblyorthodox.com/b3a4498413dba25bcd98e67937ca5a54/invoke.js';
-          script.async = true;
-          document.body.appendChild(script);
-        }
-      }
-    };
-
-    // Try after delays to ensure DOM is ready
-    const timeout = setTimeout(initAds, 100);
-    const timeout2 = setTimeout(initAds, 1000);
-    
-    return () => {
-      clearTimeout(timeout);
-      clearTimeout(timeout2);
-    };
-  }, [video]);
 
 
   // Update video source when quality changes
@@ -384,7 +348,7 @@ export default function VideoDetail() {
           {/* Banner Ad Above Video Player */}
           {video && (
             <div className="mb-4 md:mb-6 flex justify-center">
-              <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
+              <AdBanner />
             </div>
           )}
 

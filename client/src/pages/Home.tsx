@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { VideoCard } from "@/components/VideoCard";
+import AdBanner from "@/components/AdBanner";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Crown, ChevronRight } from "lucide-react";
@@ -155,42 +156,6 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // Initialize banner ads when component mounts
-  useEffect(() => {
-    const initAds = () => {
-      const adContainer = document.getElementById('b3a4498413dba25bcd98e67937ca5a54');
-      if (adContainer && !adContainer.querySelector('iframe')) {
-        // Ensure atOptions is set
-        if (typeof (window as any).atOptions === 'undefined') {
-          (window as any).atOptions = {
-            'key': 'b3a4498413dba25bcd98e67937ca5a54',
-            'format': 'iframe',
-            'height': 50,
-            'width': 320,
-            'params': {}
-          };
-        }
-        
-        // Load the ad script if not already loaded
-        if (!document.querySelector('script[src*="b3a4498413dba25bcd98e67937ca5a54"]')) {
-          const script = document.createElement('script');
-          script.src = 'https://exasperatebubblyorthodox.com/b3a4498413dba25bcd98e67937ca5a54/invoke.js';
-          script.async = true;
-          document.body.appendChild(script);
-        }
-      }
-    };
-
-    // Try after a delay to ensure DOM is ready
-    const timeout = setTimeout(initAds, 100);
-    const timeout2 = setTimeout(initAds, 1000);
-    
-    return () => {
-      clearTimeout(timeout);
-      clearTimeout(timeout2);
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#222222] text-white font-sans">
       <Header />
@@ -288,7 +253,7 @@ export default function Home() {
               <button className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-[10px]">AD</button>
             </div>
             {/* Banner Ad */}
-            <div id="b3a4498413dba25bcd98e67937ca5a54" style={{ width: '320px', height: '50px' }}></div>
+            <AdBanner />
           </div>
 
           {/* Videos Grid */}
