@@ -224,8 +224,6 @@ export function VideoCard({ video }: VideoCardProps) {
       {/* Thumbnail Container */}
       <a 
         href={`/video/${videoSlug}`} 
-        target="_blank" 
-        rel="noopener noreferrer"
         className="block relative aspect-video bg-[#1a1a1a] rounded-lg overflow-hidden cursor-pointer shadow-lg shadow-black/20 group-hover:shadow-primary/10 transition-all border border-transparent group-hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#222222]"
       >
         
@@ -465,8 +463,6 @@ export function VideoCard({ video }: VideoCardProps) {
       <div className="flex flex-col gap-1 md:gap-1.5 mt-1">
         <a 
           href={`/video/${videoSlug}`} 
-          target="_blank" 
-          rel="noopener noreferrer"
           className="text-xs sm:text-sm font-medium text-white group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]"
         >
           {video.title}

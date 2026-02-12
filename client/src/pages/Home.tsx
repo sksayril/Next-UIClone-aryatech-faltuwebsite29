@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { VideoCard } from "@/components/VideoCard";
 import AdBanner from "@/components/AdBanner";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Crown, ChevronRight } from "lucide-react";
 import { type VideoResponse } from "@shared/routes";
@@ -14,6 +14,7 @@ import { useRoute, useLocation } from "wouter";
 export default function Home() {
   const [activeVideoType, setActiveVideoType] = useState<'free'|'short'|'premium'|'photos'>('free');
   const [location, setLocation] = useLocation();
+  const lastPaginationPageRef = useRef<number | null>(null);
   
   // Parse search query from URL
   const searchParams = new URLSearchParams(location.split('?')[1] || '');
@@ -135,13 +136,18 @@ export default function Home() {
   // Update URL if page from API doesn't match URL (redirect to correct page)
   useEffect(() => {
     if (pagination && pagination.page && pagination.page !== currentPage) {
-      if (pagination.page === 1) {
-        setLocation("/");
-      } else {
-        setLocation(`/page-${pagination.page}`);
+      // Prevent infinite loops by checking if we've already processed this page
+      if (lastPaginationPageRef.current !== pagination.page) {
+        lastPaginationPageRef.current = pagination.page;
+        if (pagination.page === 1) {
+          setLocation("/");
+        } else {
+          setLocation(`/page-${pagination.page}`);
+        }
       }
     }
-  }, [pagination, currentPage, setLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination?.page]); // Only depend on pagination.page to prevent loops
 
   const popularTags = ["Xnxx", "Xvideos", "Xxx", "Free Sex", "Mature Tube", "Stripchat", "Best Videos"];
 
@@ -247,13 +253,15 @@ export default function Home() {
           </div>
 
           {/* Ad Disclaimer */}
-          <div className="flex flex-col items-center gap-3 mb-10">
+          <div className="flex flex-col items-center gap-3 mb-10 w-full">
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>By clicking the content you will also see an ad.</span>
-              <button className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-[10px]">AD</button>
+              {/* <span>By clicking the content you will also see an ad.</span> */}
+              {/* <button className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-[10px]">AD</button> */}
             </div>
             {/* Banner Ad */}
-            <AdBanner />
+            <div className="w-full flex justify-center items-center min-h-[50px]">
+              <AdBanner />
+            </div>
           </div>
 
           {/* Videos Grid */}
@@ -293,11 +301,15 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-8 md:mb-12">
-                    {videos.map((video: VideoResponse) => (
-                      <VideoCard key={video.id} video={video} />
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mb-10">
+  {videos.map((video: VideoResponse) => (
+    <VideoCard key={`video-${video.id}`} video={video} />
+  ))}
+</div>
+
+
+
+
 
                   {/* Pagination - Based on API response */}
                   {totalPages > 1 && (() => {

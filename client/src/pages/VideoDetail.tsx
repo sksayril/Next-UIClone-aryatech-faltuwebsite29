@@ -3,8 +3,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { VideoCard } from "@/components/VideoCard";
 import AdBanner from "@/components/AdBanner";
+import Adbannersecond from "@/components/Adbannersecond";
 import { Button } from "@/components/ui/button";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRoute } from "wouter";
 import { Loader2, ThumbsUp, ThumbsDown, Share2, Heart, Flag, Info, MessageCircle, Play, Volume2, Maximize, Settings, ChevronDown, Pause } from "lucide-react";
 import { type VideoResponse } from "@shared/routes";
@@ -915,6 +916,11 @@ export default function VideoDetail() {
             </Button>
           </div>
 
+          {/* Ad Banner Second */}
+          <div className="flex justify-center my-4 md:my-6">
+            <Adbannersecond uniqueId={`ad-video-detail-${video.id}`} />
+          </div>
+
           {/* FapHouse Banner */}
           {/* <div className="bg-[#2a2a2a] rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -968,13 +974,39 @@ export default function VideoDetail() {
           {/* Related Videos Grid - 2 columns on mobile, 6 on desktop */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4 mb-6 md:mb-8">
             {allRelatedVideos.length > 0 ? (
-              allRelatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse) => (
-                <VideoCard key={relatedVideo.id} video={relatedVideo} />
-              ))
+              allRelatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse, index: number) => {
+                const VIDEOS_PER_AD = 6; // har row ke baad (lg: 6 columns = 1 row)
+                const videoNumber = index + 1;
+                const showAd = videoNumber % VIDEOS_PER_AD === 0;
+
+                return (
+                  <React.Fragment key={`related-${relatedVideo.id}`}>
+                    <VideoCard video={relatedVideo} />
+                    {showAd && (
+                      <div className="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-6 flex justify-center py-4 md:py-6">
+                        <Adbannersecond uniqueId={`ad-related-${video.id}-${index}`} />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })
             ) : Array.isArray(relatedVideos) && relatedVideos.length > 0 ? (
-              relatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse) => (
-                <VideoCard key={relatedVideo.id} video={relatedVideo} />
-              ))
+              relatedVideos.slice(0, videosToShow).map((relatedVideo: VideoResponse, index: number) => {
+                const VIDEOS_PER_AD = 6; // har row ke baad (lg: 6 columns = 1 row)
+                const videoNumber = index + 1;
+                const showAd = videoNumber % VIDEOS_PER_AD === 0;
+
+                return (
+                  <React.Fragment key={`related-${relatedVideo.id}`}>
+                    <VideoCard video={relatedVideo} />
+                    {showAd && (
+                      <div className="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-6 flex justify-center py-4 md:py-6">
+                        <Adbannersecond uniqueId={`ad-related-${video.id}-${index}`} />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })
             ) : (
               <div className="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-6 text-center text-gray-500 py-8">
                 No related videos found.

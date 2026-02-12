@@ -2,7 +2,7 @@ import { Search, Menu, Camera, Upload, Settings, ChevronDown, Heart, Crown, Bell
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useVideos, useCategories, useChannels, useActors } from "@/hooks/use-videos";
 import {
@@ -41,11 +41,12 @@ export function Header() {
     country: 'US'
   });
   
-  // Extract all videos for suggestions
-  const allVideos = videosData 
-    ? (Array.isArray(videosData) ? videosData : (videosData?.videos || []))
-        .filter((v: any) => v && v.title && v.title.trim())
-    : [];
+  // Extract all videos for suggestions - use useMemo to prevent infinite loops
+  const allVideos = useMemo(() => {
+    if (!videosData) return [];
+    const videos = Array.isArray(videosData) ? videosData : (videosData?.videos || []);
+    return videos.filter((v: any) => v && v.title && v.title.trim());
+  }, [videosData]);
   
   // Generate search suggestions based on input - return video objects
   useEffect(() => {
@@ -69,10 +70,10 @@ export function Header() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.split('?')[1] || '');
     const urlSearchQuery = searchParams.get('search') || '';
-    if (urlSearchQuery && !desktopSearchQuery) {
+    if (urlSearchQuery && urlSearchQuery !== desktopSearchQuery) {
       setDesktopSearchQuery(urlSearchQuery);
     }
-  }, [location, desktopSearchQuery]);
+  }, [location]); // Remove desktopSearchQuery from dependencies to prevent loop
 
   // Function to handle search submission
   const handleSearch = (query: string) => {
