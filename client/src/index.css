@@ -1,45 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Oswald', sans-serif;
+  --font-sans: 'Roboto', 'Inter', sans-serif;
+  --font-display: 'Roboto', 'Inter', sans-serif;
 
-  /* Dark Theme Palette (xHamster inspired) */
-  --background: 0 0% 13%;      /* #222222 - Main background */
+  /* YouTube Inspired Dark Theme */
+  --background: 0 0% 3.9%;      /* #0a0a0a - Darker background */
   --foreground: 0 0% 100%;    /* #ffffff - Primary text */
   
-  --primary: 358 66% 50%;     /* #d52d2d - Brand Red */
+  --primary: 0 100% 50%;      /* #ff0000 - YouTube Red */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 18%;      /* #2e2e2e - Secondary bg elements */
-  --secondary-foreground: 0 0% 80%;
+  --secondary: 0 0% 15%;      /* #272727 - Secondary bg elements */
+  --secondary-foreground: 0 0% 90%;
   
-  --muted: 0 0% 12%;          /* #1e1e1e - Sidebar/Nav background */
-  --muted-foreground: 0 0% 60%; /* #999999 - Secondary text */
+  --muted: 0 0% 6%;          /* #0f0f0f - Sidebar/Nav background */
+  --muted-foreground: 0 0% 65%; /* #aaaaaa - Secondary text */
 
-  --accent: 358 66% 50%;
+  --accent: 0 0% 15%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 20%;         /* Dark border */
-  --input: 0 0% 20%;
-  --ring: 358 66% 50%;
+  --border: 0 0% 15%;         /* Dark border */
+  --input: 0 0% 15%;
+  --ring: 0 100% 50%;
   
-  --card: 0 0% 7%;
+  --card: 0 0% 5%;
   --card-foreground: 0 0% 100%;
   
-  --sidebar-background: 0 0% 9%; /* Slightly lighter than main bg */
+  --sidebar-background: 0 0% 3.9%;
 }
 
 @layer base {
   * {
     box-sizing: border-box;
+    border-color: hsl(var(--border));
   }
 
   html {
@@ -54,7 +55,6 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
     @apply font-bold tracking-tight;
   }
 }
@@ -71,20 +71,30 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  .yt-search-radius {
+    border-radius: 40px 0 0 40px;
+  }
+  
+  .yt-search-btn-radius {
+    border-radius: 0 40px 40px 0;
+  }
 }
 
-/* Custom Scrollbar for dark theme */
+/* Custom Scrollbar for YouTube theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #111; 
+  background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #333; 
-  border-radius: 4px;
+  background: #3f3f3f; 
+  border-radius: 10px;
+  border: 2px solid #0f0f0f;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #444; 
+  background: #717171; 
 }
+
