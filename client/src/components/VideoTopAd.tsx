@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function AdBanner() {
+export default function VideoTopAd() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -11,16 +11,16 @@ export default function AdBanner() {
 
     // Set the global atOptions configuration
     (window as any).atOptions = {
-      'key' : 'b3a4498413dba25bcd98e67937ca5a54',
+      'key' : '9cd5c86fbf732ac0d9eba5ed751c269c',
       'format' : 'iframe',
-      'height' : 50,
-      'width' : 320,
+      'height' : 60,
+      'width' : 468,
       'params' : {}
     };
 
     // Create the script element
     const script = document.createElement("script");
-    script.src = "https://unsettledradiator.com/b3a4498413dba25bcd98e67937ca5a54/invoke.js";
+    script.src = "https://unsettledradiator.com/9cd5c86fbf732ac0d9eba5ed751c269c/invoke.js";
     script.async = true;
 
     // Append to container
@@ -34,8 +34,8 @@ export default function AdBanner() {
   }, []);
 
   return (
-    <div className="flex justify-center items-center my-4 w-full min-h-[50px] overflow-hidden bg-transparent">
-      <div ref={containerRef} id="ad-container-b3a4498413dba25bcd98e67937ca5a54" />
+    <div className="flex justify-center items-center my-4 w-full min-h-[60px] overflow-hidden bg-transparent">
+      <div ref={containerRef} id="ad-container-9cd5c86fbf732ac0d9eba5ed751c269c" />
     </div>
   );
 }

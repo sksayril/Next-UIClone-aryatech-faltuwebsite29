@@ -77,22 +77,11 @@ export function VideoCard({ video }: VideoCardProps) {
 
       {/* Meta */}
       <div className="flex gap-3 px-1">
-        <div className="h-9 w-9 rounded-full bg-gray-700 flex-shrink-0 mt-0.5 overflow-hidden">
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${channelName}`} 
-            alt="Avatar" 
-            className="w-full h-full object-cover"
-          />
-        </div>
         <div className="flex flex-col flex-1 min-w-0">
           <h3 className="text-[16px] font-bold text-white line-clamp-2 leading-[1.4rem] mb-1 group-hover:text-white transition-colors">
             {video.title}
           </h3>
           <div className="flex flex-col text-[14px] text-gray-400">
-            <div className="flex items-center gap-1 hover:text-white transition-colors">
-              <span className="truncate">{channelName}</span>
-              <CheckCircle2 className="h-3.5 w-3.5 fill-gray-400 text-[#0f0f0f]" />
-            </div>
             <div className="flex items-center">
               <span>{formatViews(video.views)} views</span>
               <span className="mx-1">•</span>

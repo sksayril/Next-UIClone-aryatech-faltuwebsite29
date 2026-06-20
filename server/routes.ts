@@ -96,26 +96,45 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   app.get(api.videos.list.path, async (req, res) => {
+    let page = 1;
+    let limit = 30;
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 30;
+      page = parseInt(req.query.page as string) || 1;
+      limit = parseInt(req.query.limit as string) || 30;
       const country = (req.query.country as string) || 'US'; // Default to US
+      const search = req.query.search as string;
+      const category = req.query.category as string;
       
-      console.log(`Fetching videos from API: page=${page}, limit=${limit}, country=${country}`);
-      
-      // Fetch from external API - Note: sort parameter is not supported by external API
-      const apiUrl = buildExternalApiUrl('api/movies/all', {
-        page: page.toString(),
-        limit: limit.toString(),
-        country: country
-      });
+      let apiUrl: string;
+      if (search && search.trim()) {
+        console.log(`Searching videos from API: query=${search}, page=${page}, limit=${limit}, country=${country}`);
+        apiUrl = buildExternalApiUrl('api/movies/search', {
+          q: search.trim(),
+          page: page.toString(),
+          limit: limit.toString()
+        });
+      } else if (category && category !== 'all' && category !== 'All') {
+        console.log(`Fetching videos for category slug=${category}: page=${page}, limit=${limit}, country=${country}`);
+        apiUrl = buildExternalApiUrl('api/movies/category/:slug/videos', {
+          slug: category,
+          page: page.toString(),
+          limit: limit.toString()
+        });
+      } else {
+        console.log(`Fetching all videos from API: page=${page}, limit=${limit}, country=${country}`);
+        apiUrl = buildExternalApiUrl('api/movies/all', {
+          page: page.toString(),
+          limit: limit.toString()
+        });
+      }
       
       console.log(`Calling external API: ${apiUrl}`);
       
       const apiResponse = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'X-Country-Code': country
         }
       });
       
