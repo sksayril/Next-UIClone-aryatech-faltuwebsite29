@@ -74,16 +74,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white">
       <Header />
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex min-h-[calc(100vh-56px)]">
         {/* Left Sidebar */}
-        <div className="hidden lg:block w-60 flex-shrink-0">
+        <div className="hidden lg:block w-60 flex-shrink-0 sticky top-14 self-start">
           <Sidebar />
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto scrollbar-hide bg-[#0f0f0f]">
+        <main className="flex-1 min-w-0 bg-[#0f0f0f]">
           {/* Category Tags */}
-          <div className="sticky top-0 z-40 bg-[#0f0f0f]/95 backdrop-blur-sm px-4 py-3 flex gap-3 overflow-x-auto scrollbar-hide border-b border-transparent">
+          <div className="sticky top-14 z-40 bg-[#0f0f0f]/95 backdrop-blur-sm px-4 py-3 flex gap-3 overflow-x-auto scrollbar-hide border-b border-transparent">
             {categoriesList.map((cat) => (
               <button
                 key={cat.slug}

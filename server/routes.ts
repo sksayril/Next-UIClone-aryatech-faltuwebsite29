@@ -240,6 +240,24 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/videos/:id/download', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const quality = req.query.quality as string;
+      const apiUrl = buildExternalApiUrl(`api/movies/${id}/download`, quality ? { quality } : {});
+      console.log(`Proxying download request: ${apiUrl}`);
+      const apiResponse = await fetch(apiUrl);
+      if (!apiResponse.ok) {
+        return res.status(apiResponse.status).json({ message: "Failed to fetch download URL" });
+      }
+      const data = await apiResponse.json();
+      return res.json(data);
+    } catch (error) {
+      console.error('Error proxying download request:', error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get(api.videos.getBySlug.path, async (req, res) => {
     try {
       const slug = req.params.slug;

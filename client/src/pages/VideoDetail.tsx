@@ -4,7 +4,7 @@ import Adbannersecond from "@/components/Adbannersecond";
 import VideoTopAd from "@/components/VideoTopAd";
 import React, { useRef, useMemo } from "react";
 import { useRoute } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { type VideoResponse } from "@shared/routes";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
@@ -66,10 +66,62 @@ export default function VideoDetail() {
             />
           </div>
 
-          {/* Title */}
-          <h1 className="mt-4 text-xl font-bold line-clamp-2 md:text-2xl">
-            {video.title}
-          </h1>
+          {/* Title & Download Options */}
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-4">
+            <h1 className="text-xl font-bold line-clamp-2 md:text-2xl flex-1">
+              {video.title}
+            </h1>
+            <div className="flex flex-wrap gap-2 flex-shrink-0">
+              {video.videoQualities && Object.keys(video.videoQualities).length > 0 ? (
+                Object.entries(video.videoQualities).map(([quality, url]) => (
+                  <button
+                    key={quality}
+                    onClick={async () => {
+                      try {
+                        const targetId = (video as any)._apiId || video.id;
+                        const response = await fetch(`/api/videos/${targetId}/download?quality=${quality}`);
+                        const data = await response.json();
+                        if (data.success && data.downloadUrl) {
+                          window.open(data.downloadUrl, '_blank');
+                        } else {
+                          alert('Failed to get download URL');
+                        }
+                      } catch (err) {
+                        console.error('Download error:', err);
+                        alert('Error starting download');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-colors duration-200 shadow-md"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download {quality.toUpperCase()}
+                  </button>
+                ))
+              ) : videoUrl ? (
+                <button
+                  onClick={async () => {
+                    try {
+                      const targetId = (video as any)._apiId || video.id;
+                      const response = await fetch(`/api/videos/${targetId}/download`);
+                      const data = await response.json();
+                      if (data.success && data.downloadUrl) {
+                        window.open(data.downloadUrl, '_blank');
+                      } else {
+                        alert('Failed to get download URL');
+                      }
+                    } catch (err) {
+                      console.error('Download error:', err);
+                      alert('Error starting download');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-colors duration-200 shadow-md"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Video
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         {/* Right Side: Related Videos */}
